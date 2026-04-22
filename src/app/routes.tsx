@@ -1,10 +1,36 @@
-import { createBrowserRouter } from "react-router";
-import { Landing } from "./pages/Landing";
-import { Login } from "./pages/Login";
-import { Dashboard } from "./pages/Dashboard";
+import { createBrowserRouter } from 'react-router';
+import { Layout } from './components/Layout';
+import { Landing } from './pages/Landing';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { UserDashboard } from './pages/UserDashboard';
+import { AdminDashboard } from './pages/AdminDashboard';
 
 export const router = createBrowserRouter([
-  { path: "/", Component: Landing },
-  { path: "/login", Component: Login },
-  { path: "/dashboard", Component: Dashboard },
+  {
+    path: '/',
+    Component: Layout,
+    children: [
+      {
+        index: true,
+        Component: Landing,
+      },
+      {
+        path: 'login',
+        Component: Login,
+      },
+      {
+        path: 'register',
+        Component: Register,
+      },
+      {
+        path: 'dashboard',
+        Component: UserDashboard,
+      },
+      {
+        path: 'admin',
+        Component: AdminDashboard,
+      },
+    ],
+  },
 ]);
