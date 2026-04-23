@@ -1,56 +1,18 @@
 import { User, TrendingUp, Package, DollarSign, Search } from 'lucide-react';
 import { useState } from 'react';
+import type { AdminUser } from '../../types';
 
-interface UserData {
-  id: string;
-  email: string;
-  full_name: string;
-  total_submissions: number;
-  total_weight: number;
-  total_earnings: number;
-  status: 'active' | 'inactive';
-  joined_at: string;
+interface UserManagementProps {
+  users: AdminUser[];
 }
 
-export function UserManagement() {
+export function UserManagement({ users }: UserManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const mockUsers: UserData[] = [
-    {
-      id: '1',
-      email: 'umkm1@example.com',
-      full_name: 'Toko Maju Jaya',
-      total_submissions: 12,
-      total_weight: 45.5,
-      total_earnings: 125000,
-      status: 'active',
-      joined_at: '2026-01-15',
-    },
-    {
-      id: '2',
-      email: 'umkm2@example.com',
-      full_name: 'Warung Berkah',
-      total_submissions: 8,
-      total_weight: 32.3,
-      total_earnings: 89000,
-      status: 'active',
-      joined_at: '2026-02-10',
-    },
-    {
-      id: '3',
-      email: 'umkm3@example.com',
-      full_name: 'CV. Harapan Baru',
-      total_submissions: 25,
-      total_weight: 156.8,
-      total_earnings: 423000,
-      status: 'active',
-      joined_at: '2025-12-01',
-    },
-  ];
-
-  const filteredUsers = mockUsers.filter(user =>
+  const filteredUsers = users.filter((user) =>
     user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.full_name.toLowerCase().includes(searchQuery.toLowerCase())
+    user.display_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.full_name.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -91,7 +53,7 @@ export function UserManagement() {
                       <User className="w-5 h-5 text-green-500" />
                     </div>
                     <div>
-                      <div className="text-white">{user.full_name}</div>
+                      <div className="text-white">{user.display_name}</div>
                       <div className="text-gray-400 text-sm">{user.email}</div>
                     </div>
                   </div>
@@ -137,16 +99,21 @@ export function UserManagement() {
       <div className="mt-6 grid grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30">
           <div className="text-gray-400 text-sm mb-1">Total Users</div>
-          <div className="text-2xl text-white">{mockUsers.length}</div>
+          <div className="text-2xl text-white">{users.length}</div>
         </div>
         <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30">
           <div className="text-gray-400 text-sm mb-1">Active Users</div>
-          <div className="text-2xl text-white">{mockUsers.filter(u => u.status === 'active').length}</div>
+          <div className="text-2xl text-white">
+            {users.filter((user) => user.status === 'active').length}
+          </div>
         </div>
         <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30">
           <div className="text-gray-400 text-sm mb-1">Avg. Contribution</div>
           <div className="text-2xl text-white">
-            {(mockUsers.reduce((sum, u) => sum + u.total_weight, 0) / mockUsers.length).toFixed(1)} KG
+            {users.length > 0
+              ? (users.reduce((sum, user) => sum + user.total_weight, 0) / users.length).toFixed(1)
+              : '0.0'}{' '}
+            KG
           </div>
         </div>
       </div>

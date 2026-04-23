@@ -1,34 +1,45 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import { Mail, Lock, Eye, EyeOff, Leaf, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import { getErrorMessage, getGoogleAuthStartUrl } from '../lib/api';
+import { useAuth } from '../providers/AuthProvider';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 
 export function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, login, isLoading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const oauthError = searchParams.get('oauthError');
+
+  if (!authLoading && user) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
 
-    // Simulate login - will be replaced with Supabase auth
-    setTimeout(() => {
+    try {
+      const response = await login({ email, password });
+      toast.success('Login berhasil.');
+      navigate(response.redirectTo, { replace: true });
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, 'Gagal login. Silakan coba lagi.'));
+    } finally {
       setIsLoading(false);
-      // Mock: redirect based on email
-      if (email.includes('admin')) {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
-    }, 1500);
+    }
   };
 
   const handleGoogleLogin = () => {
-    // Will be replaced with Supabase Google OAuth
-    alert('Google OAuth akan diintegrasikan dengan Supabase');
+    window.location.href = getGoogleAuthStartUrl();
   };
 
   return (
@@ -54,6 +65,13 @@ export function Login() {
 
         {/* Form Card */}
         <div className="p-8 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-xl">
+          {(oauthError || errorMessage) && (
+            <Alert className="mb-4 border-red-500/30 bg-red-500/10 text-red-200">
+              <AlertTitle>Login gagal</AlertTitle>
+              <AlertDescription>{oauthError ?? errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Input */}
@@ -149,6 +167,7 @@ export function Login() {
           {/* Google Login Button */}
           <button
             onClick={handleGoogleLogin}
+            type="button"
             className="w-full py-3 px-4 rounded-lg bg-white text-gray-900 hover:bg-gray-100 transition-all flex items-center justify-center gap-3 shadow-lg mb-6"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

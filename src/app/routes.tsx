@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuthCallback } from './pages/AuthCallback';
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,10 @@ export const router = createBrowserRouter([
       {
         path: 'register',
         Component: Register,
+      },
+      {
+        path: 'auth/callback',
+        Component: AuthCallback,
       },
       {
         path: 'dashboard',

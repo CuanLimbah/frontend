@@ -1,15 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings } from 'lucide-react';
+import { Navigate } from 'react-router';
 import { VerificationQueue } from '../components/admin/VerificationQueue';
 import { PriceCatalog } from '../components/admin/PriceCatalog';
 import { UserManagement } from '../components/admin/UserManagement';
 import { WithdrawalPanel } from '../components/admin/WithdrawalPanel';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
-import { mockAdminStats } from '../lib/mockData';
 import { motion } from 'motion/react';
+import { api, ApiError, getErrorMessage } from '../lib/api';
+import { useAuth } from '../providers/AuthProvider';
+import type { AdminDashboardData } from '../types';
+import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function AdminDashboard() {
+  const { user, accessToken, isLoading: authLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'withdrawals' | 'analytics'>('verification');
+  const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const tabs = [
     { id: 'verification' as const, label: 'Verifikasi', icon: CheckSquare },
@@ -18,6 +26,124 @@ export function AdminDashboard() {
     { id: 'withdrawals' as const, label: 'Penarikan Dana', icon: DollarSign },
     { id: 'analytics' as const, label: 'Analytics', icon: TrendingUp },
   ];
+
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!accessToken || user?.role !== 'admin') {
+      setIsLoadingDashboard(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadDashboard() {
+      try {
+        setIsLoadingDashboard(true);
+        setErrorMessage(null);
+        const response = await api.getAdminDashboard(accessToken);
+
+        if (isMounted) {
+          setDashboard(response);
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          logout();
+        }
+
+        if (isMounted) {
+          setErrorMessage(getErrorMessage(error, 'Gagal memuat dashboard admin.'));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingDashboard(false);
+        }
+      }
+    }
+
+    void loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, authLoading, logout, user?.role]);
+
+  const refreshDashboard = async () => {
+    if (!accessToken) {
+      return;
+    }
+
+    const response = await api.getAdminDashboard(accessToken);
+    setDashboard(response);
+  };
+
+  const handleApproveSubmission = async (submissionId: string, actualWeight: number) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.verifySubmission(accessToken, submissionId, actualWeight);
+    await refreshDashboard();
+  };
+
+  const handleRejectSubmission = async (submissionId: string, reason: string) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.rejectSubmission(accessToken, submissionId, reason);
+    await refreshDashboard();
+  };
+
+  const handleSavePrice = async (priceId: string, pricePerKg: number) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.updatePrice(accessToken, priceId, pricePerKg);
+    await refreshDashboard();
+  };
+
+  const handleApproveWithdrawal = async (withdrawalId: string) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.approveWithdrawal(accessToken, withdrawalId);
+    await refreshDashboard();
+  };
+
+  const handleRejectWithdrawal = async (withdrawalId: string, reason: string) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.rejectWithdrawal(accessToken, withdrawalId, reason);
+    await refreshDashboard();
+  };
+
+  if (!authLoading && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!authLoading && user?.role === 'user') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (authLoading || isLoadingDashboard) {
+    return <PageLoader message="Memuat dashboard admin..." />;
+  }
+
+  if (!dashboard) {
+    return (
+      <PageErrorState
+        title="Dashboard Admin Gagal Dimuat"
+        message={errorMessage ?? 'Dashboard admin tidak dapat dimuat.'}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen py-8">
@@ -37,7 +163,7 @@ export function AdminDashboard() {
                 <Users className="w-5 h-5 text-purple-400" />
               </div>
               <div className="text-3xl text-white">
-                {mockAdminStats.total_users}
+                {dashboard.stats.total_users}
               </div>
             </motion.div>
 
@@ -52,7 +178,7 @@ export function AdminDashboard() {
                 <Package className="w-5 h-5 text-green-500" />
               </div>
               <div className="text-3xl text-white">
-                {mockAdminStats.total_waste_collected.toLocaleString('id-ID')}
+                {dashboard.stats.total_waste_collected.toLocaleString('id-ID')}
               </div>
             </motion.div>
 
@@ -67,7 +193,7 @@ export function AdminDashboard() {
                 <DollarSign className="w-5 h-5 text-blue-400" />
               </div>
               <div className="text-3xl text-white">
-                Rp {(mockAdminStats.total_cuan_distributed / 1000000).toFixed(1)}Jt
+                Rp {(dashboard.stats.total_cuan_distributed / 1000000).toFixed(1)}Jt
               </div>
             </motion.div>
 
@@ -82,7 +208,7 @@ export function AdminDashboard() {
                 <CheckSquare className="w-5 h-5 text-yellow-400" />
               </div>
               <div className="text-3xl text-white">
-                {mockAdminStats.pending_verifications}
+                {dashboard.stats.pending_verifications}
               </div>
             </motion.div>
 
@@ -97,7 +223,7 @@ export function AdminDashboard() {
                 <TrendingUp className="w-5 h-5 text-orange-400" />
               </div>
               <div className="text-3xl text-white">
-                {mockAdminStats.pending_withdrawals}
+                {dashboard.stats.pending_withdrawals}
               </div>
             </motion.div>
           </div>
@@ -132,11 +258,25 @@ export function AdminDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {activeTab === 'verification' && <VerificationQueue />}
-          {activeTab === 'prices' && <PriceCatalog />}
-          {activeTab === 'users' && <UserManagement />}
-          {activeTab === 'withdrawals' && <WithdrawalPanel />}
-          {activeTab === 'analytics' && <AnalyticsDashboard />}
+          {activeTab === 'verification' && (
+            <VerificationQueue
+              submissions={dashboard.pending_submissions}
+              onApprove={handleApproveSubmission}
+              onReject={handleRejectSubmission}
+            />
+          )}
+          {activeTab === 'prices' && (
+            <PriceCatalog prices={dashboard.prices} onSavePrice={handleSavePrice} />
+          )}
+          {activeTab === 'users' && <UserManagement users={dashboard.users} />}
+          {activeTab === 'withdrawals' && (
+            <WithdrawalPanel
+              requests={dashboard.withdrawals}
+              onApprove={handleApproveWithdrawal}
+              onReject={handleRejectWithdrawal}
+            />
+          )}
+          {activeTab === 'analytics' && <AnalyticsDashboard stats={dashboard.stats} />}
         </motion.div>
       </div>
     </div>

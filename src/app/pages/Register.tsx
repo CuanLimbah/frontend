@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { Mail, Lock, Eye, EyeOff, Leaf, ArrowRight, User, Building } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import { getErrorMessage, getGoogleAuthStartUrl } from '../lib/api';
+import { useAuth } from '../providers/AuthProvider';
+import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 
 export function Register() {
   const navigate = useNavigate();
+  const { user, register, isLoading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
     businessName: '',
@@ -16,6 +21,11 @@ export function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [agreeToTerms, setAgreeToTerms] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  if (!authLoading && user) {
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -28,28 +38,40 @@ export function Register() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Password tidak cocok!');
+      setErrorMessage('Password tidak cocok.');
       return;
     }
 
     if (!agreeToTerms) {
-      alert('Harap setujui syarat dan ketentuan');
+      setErrorMessage('Harap setujui syarat dan ketentuan.');
       return;
     }
 
     setIsLoading(true);
+    setErrorMessage(null);
 
-    // Simulate registration - will be replaced with Supabase auth
-    setTimeout(() => {
+    try {
+      const response = await register({
+        fullName: formData.fullName,
+        businessName: formData.businessName || undefined,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
+
+      toast.success('Registrasi berhasil.');
+      navigate(response.redirectTo, { replace: true });
+    } catch (error) {
+      setErrorMessage(
+        getErrorMessage(error, 'Registrasi gagal. Silakan periksa kembali data Anda.'),
+      );
+    } finally {
       setIsLoading(false);
-      alert('Registrasi berhasil! Silakan login.');
-      navigate('/login');
-    }, 1500);
+    }
   };
 
   const handleGoogleSignup = () => {
-    // Will be replaced with Supabase Google OAuth
-    alert('Google OAuth akan diintegrasikan dengan Supabase');
+    window.location.href = getGoogleAuthStartUrl();
   };
 
   return (
@@ -75,6 +97,13 @@ export function Register() {
 
         {/* Form Card */}
         <div className="p-8 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-xl">
+          {errorMessage && (
+            <Alert className="mb-4 border-red-500/30 bg-red-500/10 text-red-200">
+              <AlertTitle>Registrasi gagal</AlertTitle>
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+
           {/* Registration Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Full Name */}
@@ -239,6 +268,7 @@ export function Register() {
           {/* Google Signup Button */}
           <button
             onClick={handleGoogleSignup}
+            type="button"
             className="w-full py-3 px-4 rounded-lg bg-white text-gray-900 hover:bg-gray-100 transition-all flex items-center justify-center gap-3 shadow-lg mb-6"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">

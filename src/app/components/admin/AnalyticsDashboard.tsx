@@ -1,8 +1,12 @@
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { mockAdminStats } from '../../lib/mockData';
 import { TrendingUp, Users, Package, DollarSign } from 'lucide-react';
+import type { AdminStats } from '../../types';
 
-export function AnalyticsDashboard() {
+interface AnalyticsDashboardProps {
+  stats: AdminStats;
+}
+
+export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
   const wasteColors = {
     food: '#22c55e',
     oil: '#f59e0b',
@@ -13,11 +17,17 @@ export function AnalyticsDashboard() {
     oil: 'Minyak Jelantah',
   };
 
-  const pieData = mockAdminStats.waste_by_type.map(item => ({
+  const pieData = stats.waste_by_type.map(item => ({
     name: wasteLabels[item.type],
     value: item.weight,
     color: wasteColors[item.type],
   }));
+
+  const topWaste = [...stats.waste_by_type].sort((left, right) => right.weight - left.weight)[0];
+  const growthStart = stats.user_growth[0]?.users ?? 0;
+  const growthEnd = stats.user_growth[stats.user_growth.length - 1]?.users ?? 0;
+  const growthRate =
+    growthStart > 0 ? (((growthEnd - growthStart) / growthStart) * 100).toFixed(1) : '0.0';
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -28,20 +38,20 @@ export function AnalyticsDashboard() {
         <div className="p-6 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30">
           <Users className="w-8 h-8 text-purple-400 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Total Users</div>
-          <div className="text-3xl text-white">{mockAdminStats.total_users}</div>
+          <div className="text-3xl text-white">{stats.total_users}</div>
         </div>
 
         <div className="p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30">
           <Package className="w-8 h-8 text-green-500 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Total Limbah (KG)</div>
-          <div className="text-3xl text-white">{mockAdminStats.total_waste_collected.toLocaleString('id-ID')}</div>
+          <div className="text-3xl text-white">{stats.total_waste_collected.toLocaleString('id-ID')}</div>
         </div>
 
         <div className="p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30">
           <DollarSign className="w-8 h-8 text-blue-400 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Total Cuan</div>
           <div className="text-3xl text-white">
-            Rp {(mockAdminStats.total_cuan_distributed / 1000000).toFixed(1)}Jt
+            Rp {(stats.total_cuan_distributed / 1000000).toFixed(1)}Jt
           </div>
         </div>
 
@@ -49,7 +59,10 @@ export function AnalyticsDashboard() {
           <TrendingUp className="w-8 h-8 text-orange-400 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Avg. per User</div>
           <div className="text-3xl text-white">
-            {(mockAdminStats.total_waste_collected / mockAdminStats.total_users).toFixed(1)} KG
+            {stats.total_users > 0
+              ? (stats.total_waste_collected / stats.total_users).toFixed(1)
+              : '0.0'}{' '}
+            KG
           </div>
         </div>
       </div>
@@ -60,7 +73,7 @@ export function AnalyticsDashboard() {
         <div className="p-6 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10">
           <h3 className="text-white mb-4">Pertumbuhan User (30 Hari)</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={mockAdminStats.user_growth}>
+            <LineChart data={stats.user_growth}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis
                 dataKey="date"
@@ -125,7 +138,7 @@ export function AnalyticsDashboard() {
         <div className="p-6 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 md:col-span-2">
           <h3 className="text-white mb-4">Perbandingan Jenis Limbah</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={mockAdminStats.waste_by_type}>
+            <BarChart data={stats.waste_by_type}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
               <XAxis
                 dataKey="type"
@@ -147,7 +160,7 @@ export function AnalyticsDashboard() {
                 ]}
               />
               <Bar dataKey="weight" radius={[8, 8, 0, 0]}>
-                {mockAdminStats.waste_by_type.map((entry, index) => (
+                {stats.waste_by_type.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={wasteColors[entry.type]} />
                 ))}
               </Bar>
@@ -161,23 +174,26 @@ export function AnalyticsDashboard() {
         <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30">
           <h4 className="text-white mb-2">Top Performing Waste</h4>
           <div className="text-2xl text-green-500">
-            {wasteLabels[mockAdminStats.waste_by_type.sort((a, b) => b.weight - a.weight)[0].type]}
+            {topWaste ? wasteLabels[topWaste.type] : '-'}
           </div>
           <div className="text-gray-400 text-sm">
-            {mockAdminStats.waste_by_type.sort((a, b) => b.weight - a.weight)[0].weight.toFixed(1)} KG terkumpul
+            {topWaste ? `${topWaste.weight.toFixed(1)} KG terkumpul` : 'Belum ada data'}
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
           <h4 className="text-white mb-2">User Growth Rate</h4>
-          <div className="text-2xl text-blue-400">+23.5%</div>
+          <div className="text-2xl text-blue-400">+{growthRate}%</div>
           <div className="text-gray-400 text-sm">30 hari terakhir</div>
         </div>
 
         <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
           <h4 className="text-white mb-2">Avg. Transaction Value</h4>
           <div className="text-2xl text-purple-400">
-            Rp {Math.floor(mockAdminStats.total_cuan_distributed / mockAdminStats.total_users).toLocaleString('id-ID')}
+            Rp{' '}
+            {Math.floor(
+              stats.total_users > 0 ? stats.total_cuan_distributed / stats.total_users : 0,
+            ).toLocaleString('id-ID')}
           </div>
           <div className="text-gray-400 text-sm">Per user</div>
         </div>

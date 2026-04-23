@@ -1,13 +1,17 @@
 import { MapPin, Phone, Clock } from 'lucide-react';
-import { mockDropPoints } from '../../lib/mockData';
+import type { DropPoint } from '../../types';
 
-export function DropPointList() {
+interface DropPointListProps {
+  dropPoints: DropPoint[];
+}
+
+export function DropPointList({ dropPoints }: DropPointListProps) {
   return (
     <div className="max-w-4xl mx-auto">
       <h2 className="text-2xl text-white mb-6">Titik Setor Limbah</h2>
 
       <div className="grid md:grid-cols-2 gap-4">
-        {mockDropPoints.map((point) => (
+        {dropPoints.map((point) => (
           <div
             key={point.id}
             className="p-6 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 hover:border-green-500/30 transition-all group"

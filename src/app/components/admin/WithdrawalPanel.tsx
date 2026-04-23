@@ -2,63 +2,52 @@ import { CheckCircle, XCircle, Clock, DollarSign } from 'lucide-react';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { getErrorMessage } from '../../lib/api';
+import type { AdminWithdrawals } from '../../types';
 
-interface WithdrawalRequest {
-  id: string;
-  user_email: string;
-  user_name: string;
-  amount: number;
-  method: string;
-  account: string;
-  status: 'pending' | 'completed' | 'rejected';
-  created_at: string;
+interface WithdrawalPanelProps {
+  requests: AdminWithdrawals;
+  onApprove: (withdrawalId: string) => Promise<void>;
+  onReject: (withdrawalId: string, reason: string) => Promise<void>;
 }
 
-export function WithdrawalPanel() {
-  const [requests, setRequests] = useState<WithdrawalRequest[]>([
-    {
-      id: '1',
-      user_email: 'umkm1@example.com',
-      user_name: 'Toko Maju Jaya',
-      amount: 50000,
-      method: 'GoPay',
-      account: '081234567890',
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      user_email: 'umkm2@example.com',
-      user_name: 'Warung Berkah',
-      amount: 75000,
-      method: 'Bank Transfer',
-      account: '1234567890',
-      status: 'pending',
-      created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    },
-  ]);
+export function WithdrawalPanel({
+  requests,
+  onApprove,
+  onReject,
+}: WithdrawalPanelProps) {
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const handleApprove = (requestId: string) => {
-    // Will be replaced with Supabase update
-    setRequests(prev => prev.map(r =>
-      r.id === requestId ? { ...r, status: 'completed' as const } : r
-    ));
-    alert('Penarikan berhasil disetujui!');
+  const handleApprove = async (requestId: string) => {
+    try {
+      setProcessingId(requestId);
+      await onApprove(requestId);
+      toast.success('Penarikan berhasil disetujui.');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Gagal menyetujui penarikan.'));
+    } finally {
+      setProcessingId(null);
+    }
   };
 
-  const handleReject = (requestId: string) => {
+  const handleReject = async (requestId: string) => {
     const reason = prompt('Alasan penolakan:');
     if (!reason) return;
 
-    // Will be replaced with Supabase update
-    setRequests(prev => prev.map(r =>
-      r.id === requestId ? { ...r, status: 'rejected' as const } : r
-    ));
-    alert('Penarikan ditolak');
+    try {
+      setProcessingId(requestId);
+      await onReject(requestId, reason);
+      toast.success('Penarikan ditolak.');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Gagal menolak penarikan.'));
+    } finally {
+      setProcessingId(null);
+    }
   };
 
-  const pendingRequests = requests.filter(r => r.status === 'pending');
-  const processedRequests = requests.filter(r => r.status !== 'pending');
+  const pendingRequests = requests.pending;
+  const processedRequests = requests.processed;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -116,15 +105,19 @@ export function WithdrawalPanel() {
 
                   <div className="flex flex-col gap-3">
                     <button
-                      onClick={() => handleApprove(request.id)}
+                      onClick={() => void handleApprove(request.id)}
+                      disabled={processingId === request.id}
                       className="py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all flex items-center justify-center gap-2"
                     >
                       <CheckCircle className="w-5 h-5" />
-                      <span>Approve & Transfer</span>
+                      <span>
+                        {processingId === request.id ? 'Memproses...' : 'Approve & Transfer'}
+                      </span>
                     </button>
 
                     <button
-                      onClick={() => handleReject(request.id)}
+                      onClick={() => void handleReject(request.id)}
+                      disabled={processingId === request.id}
                       className="py-3 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all border border-red-500/30 flex items-center justify-center gap-2"
                     >
                       <XCircle className="w-5 h-5" />

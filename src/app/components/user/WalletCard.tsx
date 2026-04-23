@@ -1,23 +1,42 @@
 import { useState } from 'react';
 import { Wallet, ArrowDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
+import { getErrorMessage, type CreateWithdrawalPayload } from '../../lib/api';
 
 interface WalletCardProps {
   balance: number;
+  isSubmitting?: boolean;
+  onWithdraw: (payload: CreateWithdrawalPayload) => Promise<void>;
 }
 
-export function WalletCard({ balance }: WalletCardProps) {
+export function WalletCard({
+  balance,
+  isSubmitting = false,
+  onWithdraw,
+}: WalletCardProps) {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<'gopay' | 'ovo' | 'dana' | 'bank'>('gopay');
   const [account, setAccount] = useState('');
 
-  const handleWithdraw = () => {
-    // Will be replaced with Supabase transaction
-    alert(`Permintaan penarikan Rp ${parseFloat(amount).toLocaleString('id-ID')} berhasil! Akan diproses dalam 1x24 jam.`);
-    setShowWithdrawModal(false);
-    setAmount('');
-    setAccount('');
+  const handleWithdraw = async () => {
+    try {
+      await onWithdraw({
+        amount: Number(amount),
+        method,
+        account,
+      });
+
+      toast.success(
+        `Permintaan penarikan Rp ${parseFloat(amount).toLocaleString('id-ID')} berhasil diajukan.`,
+      );
+      setShowWithdrawModal(false);
+      setAmount('');
+      setAccount('');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Gagal mengajukan penarikan dana.'));
+    }
   };
 
   return (
@@ -133,11 +152,17 @@ export function WalletCard({ balance }: WalletCardProps) {
               </div>
 
               <button
-                onClick={handleWithdraw}
-                disabled={!amount || parseFloat(amount) < 10000 || parseFloat(amount) > balance || !account}
+                onClick={() => void handleWithdraw()}
+                disabled={
+                  isSubmitting ||
+                  !amount ||
+                  parseFloat(amount) < 10000 ||
+                  parseFloat(amount) > balance ||
+                  !account
+                }
                 className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
               >
-                Ajukan Penarikan
+                {isSubmitting ? 'Memproses...' : 'Ajukan Penarikan'}
               </button>
             </motion.div>
           </motion.div>

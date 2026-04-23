@@ -1,10 +1,21 @@
 import { useState } from 'react';
 import { Upload, Camera, Package, CheckCircle } from 'lucide-react';
-import { WasteType } from '../../types';
-import { mockWastePrices } from '../../lib/mockData';
+import type { WastePrice, WasteType } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
+import { getErrorMessage, type CreateSubmissionPayload } from '../../lib/api';
 
-export function WasteSubmissionForm() {
+interface WasteSubmissionFormProps {
+  prices: WastePrice[];
+  isSubmitting?: boolean;
+  onSubmit: (payload: CreateSubmissionPayload) => Promise<void>;
+}
+
+export function WasteSubmissionForm({
+  prices,
+  isSubmitting = false,
+  onSubmit,
+}: WasteSubmissionFormProps) {
   const [step, setStep] = useState(1);
   const [wasteType, setWasteType] = useState<WasteType | ''>('');
   const [weight, setWeight] = useState('');
@@ -28,17 +39,32 @@ export function WasteSubmissionForm() {
     }
   };
 
-  const handleSubmit = () => {
-    // Will be replaced with Supabase submission
-    alert('Limbah berhasil disetor! Tim kami akan segera memverifikasi.');
-    setStep(1);
-    setWasteType('');
-    setWeight('');
-    setImage(null);
-    setImagePreview('');
+  const handleSubmit = async () => {
+    if (!wasteType || !weight || !imagePreview) {
+      return;
+    }
+
+    try {
+      await onSubmit({
+        wasteType,
+        estimatedWeight: Number(weight),
+        imageUrl: imagePreview,
+      });
+
+      toast.success('Limbah berhasil disetor. Tim akan segera memverifikasi.');
+      setStep(1);
+      setWasteType('');
+      setWeight('');
+      setImage(null);
+      setImagePreview('');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Gagal mengirim setoran limbah.'));
+    }
   };
 
-  const currentPrice = wasteType ? mockWastePrices.find(p => p.waste_type === wasteType)?.price_per_kg : 0;
+  const currentPrice = wasteType
+    ? prices.find((price) => price.waste_type === wasteType)?.price_per_kg
+    : 0;
   const estimatedEarnings = currentPrice && weight ? currentPrice * parseFloat(weight) : 0;
 
   return (
@@ -82,7 +108,7 @@ export function WasteSubmissionForm() {
 
               <div className="grid grid-cols-1 gap-4 mb-6">
                 {wasteTypes.map((type) => {
-                  const price = mockWastePrices.find(p => p.waste_type === type.value);
+                  const price = prices.find((priceItem) => priceItem.waste_type === type.value);
                   return (
                     <button
                       key={type.value}
@@ -223,12 +249,12 @@ export function WasteSubmissionForm() {
                   Kembali
                 </button>
                 <button
-                  onClick={handleSubmit}
-                  disabled={!image}
+                  onClick={() => void handleSubmit()}
+                  disabled={!image || isSubmitting}
                   className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   <Upload className="w-5 h-5" />
-                  <span>Submit Setoran</span>
+                  <span>{isSubmitting ? 'Mengirim...' : 'Submit Setoran'}</span>
                 </button>
               </div>
             </motion.div>

@@ -1,15 +1,25 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Wallet, Upload, TrendingUp, MapPin, Clock, FileText } from 'lucide-react';
+import { Navigate } from 'react-router';
 import { WasteSubmissionForm } from '../components/user/WasteSubmissionForm';
 import { WalletCard } from '../components/user/WalletCard';
 import { StatusTracker } from '../components/user/StatusTracker';
 import { DropPointList } from '../components/user/DropPointList';
 import { TransactionHistory } from '../components/user/TransactionHistory';
-import { mockUserStats, mockSubmissions, mockTransactions } from '../lib/mockData';
 import { motion } from 'motion/react';
+import { api, ApiError, type CreateSubmissionPayload, type CreateWithdrawalPayload, getErrorMessage } from '../lib/api';
+import { useAuth } from '../providers/AuthProvider';
+import type { UserDashboardData } from '../types';
+import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function UserDashboard() {
+  const { user, accessToken, isLoading: authLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'submit' | 'wallet' | 'status' | 'droppoints' | 'history'>('submit');
+  const [dashboard, setDashboard] = useState<UserDashboardData | null>(null);
+  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmittingWaste, setIsSubmittingWaste] = useState(false);
+  const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
 
   const tabs = [
     { id: 'submit' as const, label: 'Setor Limbah', icon: Upload },
@@ -18,6 +28,111 @@ export function UserDashboard() {
     { id: 'droppoints' as const, label: 'Drop Point', icon: MapPin },
     { id: 'history' as const, label: 'Riwayat', icon: FileText },
   ];
+
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!accessToken || user?.role !== 'user') {
+      setIsLoadingDashboard(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function loadDashboard() {
+      try {
+        setIsLoadingDashboard(true);
+        setErrorMessage(null);
+        const response = await api.getUserDashboard(accessToken);
+
+        if (isMounted) {
+          setDashboard(response);
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          logout();
+        }
+
+        if (isMounted) {
+          setErrorMessage(getErrorMessage(error, 'Gagal memuat dashboard user.'));
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingDashboard(false);
+        }
+      }
+    }
+
+    void loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [accessToken, authLoading, logout, user?.role]);
+
+  const refreshDashboard = async () => {
+    if (!accessToken) {
+      return;
+    }
+
+    const response = await api.getUserDashboard(accessToken);
+    setDashboard(response);
+  };
+
+  const handleCreateSubmission = async (payload: CreateSubmissionPayload) => {
+    if (!accessToken) {
+      throw new Error('Sesi login tidak ditemukan.');
+    }
+
+    setIsSubmittingWaste(true);
+
+    try {
+      await api.createSubmission(accessToken, payload);
+      await refreshDashboard();
+      setActiveTab('status');
+    } finally {
+      setIsSubmittingWaste(false);
+    }
+  };
+
+  const handleCreateWithdrawal = async (payload: CreateWithdrawalPayload) => {
+    if (!accessToken) {
+      throw new Error('Sesi login tidak ditemukan.');
+    }
+
+    setIsSubmittingWithdrawal(true);
+
+    try {
+      await api.createWithdrawal(accessToken, payload);
+      await refreshDashboard();
+      setActiveTab('history');
+    } finally {
+      setIsSubmittingWithdrawal(false);
+    }
+  };
+
+  if (!authLoading && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!authLoading && user?.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (authLoading || isLoadingDashboard) {
+    return <PageLoader message="Memuat dashboard user..." />;
+  }
+
+  if (!dashboard) {
+    return (
+      <PageErrorState
+        title="Dashboard User Gagal Dimuat"
+        message={errorMessage ?? 'Dashboard user tidak dapat dimuat.'}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen py-8">
@@ -37,7 +152,7 @@ export function UserDashboard() {
                 <TrendingUp className="w-5 h-5 text-green-500" />
               </div>
               <div className="text-3xl text-white">
-                Rp {mockUserStats.total_earnings.toLocaleString('id-ID')}
+                Rp {dashboard.stats.total_earnings.toLocaleString('id-ID')}
               </div>
             </motion.div>
 
@@ -52,7 +167,7 @@ export function UserDashboard() {
                 <Wallet className="w-5 h-5 text-blue-400" />
               </div>
               <div className="text-3xl text-white">
-                Rp {mockUserStats.current_balance.toLocaleString('id-ID')}
+                Rp {dashboard.stats.current_balance.toLocaleString('id-ID')}
               </div>
             </motion.div>
 
@@ -67,7 +182,7 @@ export function UserDashboard() {
                 <Upload className="w-5 h-5 text-purple-400" />
               </div>
               <div className="text-3xl text-white">
-                {mockUserStats.total_submissions}
+                {dashboard.stats.total_submissions}
               </div>
             </motion.div>
 
@@ -82,7 +197,7 @@ export function UserDashboard() {
                 <FileText className="w-5 h-5 text-orange-400" />
               </div>
               <div className="text-3xl text-white">
-                {mockUserStats.total_weight.toFixed(1)} KG
+                {dashboard.stats.total_weight.toFixed(1)} KG
               </div>
             </motion.div>
           </div>
@@ -117,11 +232,25 @@ export function UserDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {activeTab === 'submit' && <WasteSubmissionForm />}
-          {activeTab === 'wallet' && <WalletCard balance={mockUserStats.current_balance} />}
-          {activeTab === 'status' && <StatusTracker submissions={mockSubmissions} />}
-          {activeTab === 'droppoints' && <DropPointList />}
-          {activeTab === 'history' && <TransactionHistory transactions={mockTransactions} />}
+          {activeTab === 'submit' && (
+            <WasteSubmissionForm
+              prices={dashboard.waste_prices}
+              isSubmitting={isSubmittingWaste}
+              onSubmit={handleCreateSubmission}
+            />
+          )}
+          {activeTab === 'wallet' && (
+            <WalletCard
+              balance={dashboard.stats.current_balance}
+              isSubmitting={isSubmittingWithdrawal}
+              onWithdraw={handleCreateWithdrawal}
+            />
+          )}
+          {activeTab === 'status' && <StatusTracker submissions={dashboard.submissions} />}
+          {activeTab === 'droppoints' && <DropPointList dropPoints={dashboard.drop_points} />}
+          {activeTab === 'history' && (
+            <TransactionHistory transactions={dashboard.transactions} />
+          )}
         </motion.div>
       </div>
     </div>

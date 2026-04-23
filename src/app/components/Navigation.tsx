@@ -1,18 +1,15 @@
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation, useNavigate } from 'react-router';
 import { Leaf, LogOut, LayoutDashboard, User } from 'lucide-react';
-import { mockUser } from '../lib/mockData';
+import { useAuth } from '../providers/AuthProvider';
 
 export function Navigation() {
   const location = useLocation();
-  const isLanding = location.pathname === '/';
-
-  // Mock auth state - will be replaced with Supabase
-  const user = location.pathname.startsWith('/admin') ? { ...mockUser, role: 'admin' as const } :
-               location.pathname.startsWith('/dashboard') ? mockUser : null;
+  const navigate = useNavigate();
+  const { user, logout, isLoading } = useAuth();
 
   const handleLogout = () => {
-    // Will be replaced with Supabase signOut
-    window.location.href = '/';
+    logout();
+    navigate('/');
   };
 
   return (
@@ -33,7 +30,7 @@ export function Navigation() {
             </Link>
 
             <div className="flex items-center gap-4">
-              {!user && (
+              {!user && !isLoading && (
                 <>
                   <a
                     href="#features"

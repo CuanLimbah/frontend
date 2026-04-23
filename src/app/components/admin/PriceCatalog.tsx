@@ -1,25 +1,35 @@
 import { useState } from 'react';
 import { Edit2, Save, X } from 'lucide-react';
-import { WastePrice } from '../../types';
-import { mockWastePrices } from '../../lib/mockData';
+import type { WastePrice } from '../../types';
+import { toast } from 'sonner';
+import { getErrorMessage } from '../../lib/api';
 
-export function PriceCatalog() {
-  const [prices, setPrices] = useState<WastePrice[]>(mockWastePrices);
+interface PriceCatalogProps {
+  prices: WastePrice[];
+  onSavePrice: (priceId: string, pricePerKg: number) => Promise<void>;
+}
+
+export function PriceCatalog({ prices, onSavePrice }: PriceCatalogProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editPrice, setEditPrice] = useState<number>(0);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const handleEdit = (price: WastePrice) => {
     setEditingId(price.id);
     setEditPrice(price.price_per_kg);
   };
 
-  const handleSave = (id: string) => {
-    // Will be replaced with Supabase update
-    setPrices(prev => prev.map(p =>
-      p.id === id ? { ...p, price_per_kg: editPrice, updated_at: new Date().toISOString() } : p
-    ));
-    setEditingId(null);
-    alert('Harga berhasil diupdate!');
+  const handleSave = async (id: string) => {
+    try {
+      setSavingId(id);
+      await onSavePrice(id, editPrice);
+      setEditingId(null);
+      toast.success('Harga berhasil diupdate.');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Gagal mengubah harga limbah.'));
+    } finally {
+      setSavingId(null);
+    }
   };
 
   const handleCancel = () => {
@@ -82,20 +92,22 @@ export function PriceCatalog() {
                 <input
                   type="number"
                   value={editPrice}
-                  onChange={(e) => setEditPrice(parseInt(e.target.value))}
+                  onChange={(e) => setEditPrice(Number(e.target.value))}
                   className="w-full px-4 py-3 bg-white/5 border border-green-500 rounded-lg text-white mb-3 focus:outline-none"
                   autoFocus
                 />
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleSave(price.id)}
+                    onClick={() => void handleSave(price.id)}
+                    disabled={savingId === price.id}
                     className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
                   >
                     <Save className="w-4 h-4" />
-                    <span>Simpan</span>
+                    <span>{savingId === price.id ? 'Menyimpan...' : 'Simpan'}</span>
                   </button>
                   <button
                     onClick={handleCancel}
+                    disabled={savingId === price.id}
                     className="flex-1 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/30 flex items-center justify-center gap-2"
                   >
                     <X className="w-4 h-4" />
