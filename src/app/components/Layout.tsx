@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { Outlet } from 'react-router';
 import { Navigation } from './Navigation';
 import { Toaster } from './ui/sonner';
+import { ChatWidget } from './common/ChatWidget';
 
 interface LayoutProps {
   children?: ReactNode;
@@ -37,6 +38,7 @@ export function Layout({ children }: LayoutProps) {
       </main>
 
       <Toaster />
+      <ChatWidget />
 
       {/* Footer */}
       <footer className="relative z-10 mt-20 border-t border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl">
