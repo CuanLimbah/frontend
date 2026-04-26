@@ -67,18 +67,19 @@ export function ChatWidget() {
                   {msg.role === 'user' ? (
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                   ) : (
-                    <ReactMarkdown
-                      className="space-y-2 leading-relaxed"
-                      components={{
-                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-1" {...props} />,
-                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 space-y-1" {...props} />,
-                        a: ({ node, ...props }) => <a className="text-green-400 hover:underline" {...props} />,
-                        p: ({ node, ...props }) => <p className="m-0" {...props} />,
-                        strong: ({ node, ...props }) => <strong className="font-semibold text-white" {...props} />
-                      }}
-                    >
-                      {msg.content}
-                    </ReactMarkdown>
+                    <div className="space-y-2 leading-relaxed">
+                      <ReactMarkdown
+                        components={{
+                          ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-1" {...props} />,
+                          ol: ({ node, ...props }) => <ol className="list-decimal pl-4 space-y-1" {...props} />,
+                          a: ({ node, ...props }) => <a className="text-green-400 hover:underline" {...props} />,
+                          p: ({ node, ...props }) => <p className="m-0" {...props} />,
+                          strong: ({ node, ...props }) => <strong className="font-semibold text-white" {...props} />
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
                   )}
                 </div>
               </div>
