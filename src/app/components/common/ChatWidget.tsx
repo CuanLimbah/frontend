@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageSquare, X, Send, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
+import ReactMarkdown from 'react-markdown';
 import { useChatStore } from '../../lib/chatStore';
 import { useAuth } from '../../providers/AuthProvider';
 
@@ -62,8 +63,23 @@ export function ChatWidget() {
             
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap ${msg.role === 'user' ? 'bg-green-500 text-white rounded-br-none' : 'bg-white/5 text-gray-200 rounded-bl-none border border-white/5'}`}>
-                  {msg.content}
+                <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user' ? 'bg-green-500 text-white rounded-br-none' : 'bg-white/5 text-gray-200 rounded-bl-none border border-white/5'}`}>
+                  {msg.role === 'user' ? (
+                    <div className="whitespace-pre-wrap">{msg.content}</div>
+                  ) : (
+                    <ReactMarkdown
+                      className="space-y-2 leading-relaxed"
+                      components={{
+                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 space-y-1" {...props} />,
+                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 space-y-1" {...props} />,
+                        a: ({ node, ...props }) => <a className="text-green-400 hover:underline" {...props} />,
+                        p: ({ node, ...props }) => <p className="m-0" {...props} />,
+                        strong: ({ node, ...props }) => <strong className="font-semibold text-white" {...props} />
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  )}
                 </div>
               </div>
             ))}
