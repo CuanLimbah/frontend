@@ -146,6 +146,23 @@ export interface SessionData {
   user: User;
 }
 
+export interface ChatAction {
+  type: 'NAVIGATE' | 'ACTION';
+  payload: string;
+  reason?: string;
+}
+
+export interface ChatResponse {
+  reply: string;
+  action?: ChatAction | null;
+  error?: string;
+}
+
+export interface ChatMessagePayload {
+  message: string;
+  userId?: string;
+}
+
 export interface UserDashboardActionHandlers {
   createSubmission: (payload: CreateSubmissionPayload) => Promise<WasteSubmission>;
   createWithdrawal: (payload: CreateWithdrawalPayload) => Promise<Transaction>;
@@ -257,6 +274,17 @@ export const api = {
         body: JSON.stringify({ reason }),
       },
       token,
+    );
+  },
+
+  chat(token: string | null | undefined, payload: ChatMessagePayload) {
+    return request<ChatResponse>(
+      '/api/chat',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      token || undefined,
     );
   },
 };

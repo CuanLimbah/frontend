@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { Outlet } from 'react-router';
+import { AiChatWidget } from './chat/AiChatWidget';
 import { Navigation } from './Navigation';
 import { Toaster } from './ui/sonner';
 
@@ -35,6 +36,8 @@ export function Layout({ children }: LayoutProps) {
       <main className="relative z-10">
         {children || <Outlet />}
       </main>
+
+      <AiChatWidget />
 
       <Toaster />
 
