@@ -12,6 +12,9 @@ export function Navigation() {
     navigate('/');
   };
 
+  const dashboardPath =
+    user?.role === 'admin' ? '/admin' : user?.role === 'driver' ? '/driver' : '/dashboard';
+
   return (
     <nav className="sticky top-0 z-50 border-b border-green-500/10">
       <div
@@ -62,7 +65,7 @@ export function Navigation() {
               {user && (
                 <>
                   <Link
-                    to={user.role === 'admin' ? '/admin' : '/dashboard'}
+                    to={dashboardPath}
                     className="flex items-center gap-2 text-gray-300 hover:text-green-500 transition-colors"
                   >
                     <LayoutDashboard className="w-4 h-4" />
