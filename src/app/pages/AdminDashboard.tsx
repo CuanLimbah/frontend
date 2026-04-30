@@ -152,17 +152,17 @@ export function AdminDashboard() {
         <div className="mb-8">
           <h1 className="text-3xl text-white mb-6">Admin Dashboard</h1>
 
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-6 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30"
+              className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Total Users</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Total Users</span>
                 <Users className="w-5 h-5 text-purple-400" />
               </div>
-              <div className="text-3xl text-white">
+              <div className="text-xl sm:text-3xl text-white">
                 {dashboard.stats.total_users}
               </div>
             </motion.div>
@@ -171,13 +171,13 @@ export function AdminDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30"
+              className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Total Limbah (KG)</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Total Limbah (KG)</span>
                 <Package className="w-5 h-5 text-green-500" />
               </div>
-              <div className="text-3xl text-white">
+              <div className="text-xl sm:text-3xl text-white">
                 {dashboard.stats.total_waste_collected.toLocaleString('id-ID')}
               </div>
             </motion.div>
@@ -186,13 +186,13 @@ export function AdminDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30"
+              className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Total Cuan</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Total Cuan</span>
                 <DollarSign className="w-5 h-5 text-blue-400" />
               </div>
-              <div className="text-3xl text-white">
+              <div className="text-xl sm:text-3xl text-white">
                 Rp {(dashboard.stats.total_cuan_distributed / 1000000).toFixed(1)}Jt
               </div>
             </motion.div>
@@ -201,13 +201,13 @@ export function AdminDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="p-6 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 border border-yellow-500/30"
+              className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/5 border border-yellow-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Pending Verif.</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Pending Verif.</span>
                 <CheckSquare className="w-5 h-5 text-yellow-400" />
               </div>
-              <div className="text-3xl text-white">
+              <div className="text-xl sm:text-3xl text-white">
                 {dashboard.stats.pending_verifications}
               </div>
             </motion.div>
@@ -216,13 +216,13 @@ export function AdminDashboard() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="p-6 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30"
+              className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400">Pending Withdrawal</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Pending Withdrawal</span>
                 <TrendingUp className="w-5 h-5 text-orange-400" />
               </div>
-              <div className="text-3xl text-white">
+              <div className="text-xl sm:text-3xl text-white">
                 {dashboard.stats.pending_withdrawals}
               </div>
             </motion.div>

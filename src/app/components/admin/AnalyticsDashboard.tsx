@@ -34,31 +34,31 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
       <h2 className="text-2xl text-white mb-6">Analytics & Reports</h2>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="p-6 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30">
-          <Users className="w-8 h-8 text-purple-400 mb-3" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+        <div className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 border border-purple-500/30">
+          <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Total Users</div>
-          <div className="text-3xl text-white">{stats.total_users}</div>
+          <div className="text-2xl sm:text-3xl text-white">{stats.total_users}</div>
         </div>
 
-        <div className="p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30">
-          <Package className="w-8 h-8 text-green-500 mb-3" />
+        <div className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30">
+          <Package className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Total Limbah (KG)</div>
-          <div className="text-3xl text-white">{stats.total_waste_collected.toLocaleString('id-ID')}</div>
+          <div className="text-2xl sm:text-3xl text-white">{stats.total_waste_collected.toLocaleString('id-ID')}</div>
         </div>
 
-        <div className="p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30">
-          <DollarSign className="w-8 h-8 text-blue-400 mb-3" />
+        <div className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/5 border border-blue-500/30">
+          <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Total Cuan</div>
-          <div className="text-3xl text-white">
+          <div className="text-2xl sm:text-3xl text-white">
             Rp {(stats.total_cuan_distributed / 1000000).toFixed(1)}Jt
           </div>
         </div>
 
-        <div className="p-6 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30">
-          <TrendingUp className="w-8 h-8 text-orange-400 mb-3" />
+        <div className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30">
+          <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-orange-400 mb-3" />
           <div className="text-gray-400 text-sm mb-1">Avg. per User</div>
-          <div className="text-3xl text-white">
+          <div className="text-2xl sm:text-3xl text-white">
             {stats.total_users > 0
               ? (stats.total_waste_collected / stats.total_users).toFixed(1)
               : '0.0'}{' '}

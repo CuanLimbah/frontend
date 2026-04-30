@@ -71,11 +71,11 @@ export function StatusTracker({ submissions }: StatusTrackerProps) {
               key={submission.id}
               className={`p-6 rounded-xl border ${getStatusColor(submission.status)}`}
             >
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                 <div className="flex items-start gap-4">
                   {getStatusIcon(submission.status)}
                   <div>
-                    <h3 className="text-lg text-white mb-1">
+                    <h3 className="text-base sm:text-lg text-white mb-1">
                       {getWasteTypeLabel(submission.waste_type)}
                     </h3>
                     <p className="text-gray-400 text-sm">
@@ -83,9 +83,9 @@ export function StatusTracker({ submissions }: StatusTrackerProps) {
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right pl-10 sm:pl-0">
                   <div className="text-sm text-gray-400 mb-1">Status</div>
-                  <div className="px-3 py-1 rounded-full bg-white/10 text-white text-sm">
+                  <div className="inline-block px-3 py-1 rounded-full bg-white/10 text-white text-sm">
                     {getStatusLabel(submission.status)}
                   </div>
                 </div>

@@ -64,7 +64,7 @@ export function Landing() {
               <span className="text-green-500 text-sm">AI-Powered Circular Economy</span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
               Jadikan Limbahmu<br />
               <span className="text-green-500 relative">
                 Menjadi Cuan
@@ -82,24 +82,24 @@ export function Landing() {
               </span>
             </h1>
 
-            <p className="text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
+            <p className="text-base sm:text-xl text-gray-400 mb-12 max-w-2xl mx-auto">
               Platform digital pertama yang mengubah limbah UMKM menjadi pendapatan pasif.
               Powered by AI verification untuk proses cepat dan transparan.
             </p>
 
-            <div className="flex items-center gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
               <Link
                 to="/register"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all shadow-lg shadow-green-500/50 hover:shadow-green-500/70 group"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all shadow-lg shadow-green-500/50 hover:shadow-green-500/70 group w-full sm:w-auto justify-center"
               >
-                <span className="text-lg">Mulai Setor Sekarang</span>
+                <span className="text-base sm:text-lg">Mulai Setor Sekarang</span>
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-all border border-white/10"
+                className="inline-flex items-center gap-2 px-6 sm:px-8 py-4 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-all border border-white/10 w-full sm:w-auto justify-center"
               >
-                <span className="text-lg">Sudah Punya Akun</span>
+                <span className="text-base sm:text-lg">Sudah Punya Akun</span>
               </Link>
             </div>
           </motion.div>
@@ -133,7 +133,7 @@ export function Landing() {
       <section id="features" className="py-20 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Kenapa CuanLimbah?</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Kenapa CuanLimbah?</h2>
             <p className="text-gray-400 text-lg">Platform terlengkap untuk monetisasi limbah Anda</p>
           </div>
 
@@ -162,7 +162,7 @@ export function Landing() {
       <section id="how-it-works" className="py-20 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Cara Kerja</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Cara Kerja</h2>
             <p className="text-gray-400 text-lg">4 langkah sederhana menuju passive income</p>
           </div>
 
@@ -196,7 +196,7 @@ export function Landing() {
       <section className="py-20 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Pertanyaan Umum</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Pertanyaan Umum</h2>
           </div>
 
           <div className="space-y-4">
@@ -229,11 +229,11 @@ export function Landing() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="p-12 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30 relative overflow-hidden"
+            className="p-6 sm:p-12 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30 relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-green-500/5 blur-3xl" />
             <div className="relative z-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4">
                 Siap Mengubah Limbah Jadi Cuan?
               </h2>
               <p className="text-gray-400 text-lg mb-8">

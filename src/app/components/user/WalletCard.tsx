@@ -42,14 +42,14 @@ export function WalletCard({
   return (
     <>
       <div className="max-w-2xl mx-auto">
-        <div className="p-8 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30 mb-6">
+        <div className="p-4 sm:p-8 rounded-2xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30 mb-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
               <Wallet className="w-6 h-6 text-green-500" />
             </div>
             <div>
               <div className="text-gray-400">Saldo Wallet Anda</div>
-              <div className="text-4xl text-white">
+              <div className="text-2xl sm:text-4xl text-white">
                 Rp {balance.toLocaleString('id-ID')}
               </div>
             </div>

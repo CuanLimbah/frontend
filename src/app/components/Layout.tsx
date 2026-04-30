@@ -43,11 +43,11 @@ export function Layout({ children }: LayoutProps) {
       {/* Footer */}
       <footer className="relative z-10 mt-20 border-t border-white/10 bg-[#0a0a0f]/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
-            <div className="text-gray-400 text-sm">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-gray-400 text-sm text-center sm:text-left">
               © 2026 CuanLimbah. Platform Circular Economy untuk UMKM Indonesia.
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap justify-center">
               <a href="#" className="text-gray-400 hover:text-green-500 transition-colors text-sm">
                 Tentang
               </a>

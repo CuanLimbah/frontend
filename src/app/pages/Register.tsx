@@ -96,7 +96,7 @@ export function Register() {
         </div>
 
         {/* Form Card */}
-        <div className="p-8 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-xl">
+        <div className="p-6 sm:p-8 rounded-2xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10 backdrop-blur-xl">
           {errorMessage && (
             <Alert className="mb-4 border-red-500/30 bg-red-500/10 text-red-200">
               <AlertTitle>Registrasi gagal</AlertTitle>

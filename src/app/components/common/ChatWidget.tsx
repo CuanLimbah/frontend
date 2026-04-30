@@ -6,11 +6,18 @@ import { useChatStore } from '../../lib/chatStore';
 import { useAuth } from '../../providers/AuthProvider';
 
 export function ChatWidget() {
-  const { isOpen, toggleOpen, messages, isLoading, sendMessage } = useChatStore();
+  const { isOpen, toggleOpen, messages, isLoading, sendMessage, loadHistory } = useChatStore();
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { accessToken } = useAuth();
+
+  // Load chat history from Supabase when user is authenticated
+  useEffect(() => {
+    if (accessToken) {
+      loadHistory(accessToken);
+    }
+  }, [accessToken]);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -34,9 +41,9 @@ export function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100] flex flex-col items-end">
       {isOpen && (
-        <div className="w-[320px] sm:w-[380px] h-[500px] bg-[#0f0f15] border border-white/10 rounded-2xl shadow-2xl mb-4 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="w-[calc(100vw-2rem)] max-w-[380px] sm:w-[380px] h-[500px] bg-[#0f0f15] border border-white/10 rounded-2xl shadow-2xl mb-4 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
           {/* Header */}
           <div className="bg-[#1a1a24] border-b border-white/10 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">

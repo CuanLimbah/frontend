@@ -69,7 +69,7 @@ export function WasteSubmissionForm({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="p-8 rounded-xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10">
+      <div className="p-4 sm:p-8 rounded-xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10">
         {/* Progress Steps */}
         <div className="flex items-center justify-between mb-8">
           {[1, 2, 3].map((s) => (

@@ -10,7 +10,7 @@ import type {
 } from '../types';
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:3000';
+  import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:3001';
 
 export function getApiBaseUrl() {
   return API_BASE_URL;

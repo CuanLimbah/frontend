@@ -11,9 +11,11 @@ interface ChatState {
   isOpen: boolean;
   messages: ChatMessage[];
   isLoading: boolean;
+  historyLoaded: boolean;
   setIsOpen: (isOpen: boolean) => void;
   toggleOpen: () => void;
   addMessage: (message: ChatMessage) => void;
+  loadHistory: (token: string) => Promise<void>;
   sendMessage: (content: string, token?: string | null) => Promise<any>;
 }
 
@@ -21,9 +23,34 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isOpen: false,
   messages: [],
   isLoading: false,
+  historyLoaded: false,
   setIsOpen: (isOpen) => set({ isOpen }),
   toggleOpen: () => set((state) => ({ isOpen: !state.isOpen })),
   addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
+  loadHistory: async (token: string) => {
+    if (get().historyLoaded) return;
+    set({ historyLoaded: true });
+
+    try {
+      const baseUrl = getApiBaseUrl();
+      const response = await fetch(`${baseUrl}/api/chat/history`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!response.ok) return;
+
+      const data = await response.json();
+      if (data.messages?.length) {
+        const messages: ChatMessage[] = data.messages.map((m: { role: 'user' | 'ai'; content: string }, i: number) => ({
+          id: `history_${i}_${Date.now()}`,
+          role: m.role,
+          content: m.content,
+        }));
+        set({ messages });
+      }
+    } catch {
+      // silently fail — chat still works without history
+    }
+  },
   sendMessage: async (content: string, token?: string | null) => {
     // 1. Add user message
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content };
