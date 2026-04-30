@@ -19,7 +19,12 @@ export function Login() {
   const oauthError = searchParams.get('oauthError');
 
   if (!authLoading && user) {
-    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+    return (
+      <Navigate
+        to={user.role === 'admin' ? '/admin' : user.role === 'driver' ? '/driver' : '/dashboard'}
+        replace
+      />
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

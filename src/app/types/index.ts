@@ -1,4 +1,4 @@
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'user' | 'driver';
 
 export type UserStatus = 'active' | 'inactive';
 
@@ -11,6 +11,8 @@ export interface User {
   status: UserStatus;
   created_at: string;
   avatar_url?: string;
+  phone_number?: string;
+  vehicle_number?: string;
 }
 
 export type WasteType = 'food' | 'oil';
@@ -131,5 +133,68 @@ export interface AdminDashboardData {
   prices: WastePrice[];
   pending_submissions: WasteSubmission[];
   users: AdminUser[];
+  drivers: User[];
+  pickup_routes: PickupRoute[];
+  payments: PaymentRecord[];
   withdrawals: AdminWithdrawals;
+}
+
+export type PickupRouteStatus =
+  | 'assigned'
+  | 'on_the_way'
+  | 'picked_up'
+  | 'completed'
+  | 'cancelled';
+
+export interface PickupRoute {
+  id: string;
+  submission_id: string;
+  user_id: string;
+  driver_id: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  scheduled_at: string;
+  status: PickupRouteStatus;
+  created_at: string;
+  started_at?: string;
+  picked_up_at?: string;
+  completed_at?: string;
+  notes?: string;
+  user_name?: string;
+  user_email?: string;
+  driver_name?: string;
+  driver_email?: string;
+  driver_vehicle?: string;
+  submission?: WasteSubmission;
+}
+
+export type PaymentMethod = 'qris' | 'virtual_account' | 'ewallet';
+
+export type PaymentStatus = 'pending' | 'paid' | 'expired' | 'failed';
+
+export interface PaymentRecord {
+  id: string;
+  user_id: string;
+  amount: number;
+  method: PaymentMethod;
+  status: PaymentStatus;
+  provider: string;
+  purpose: string;
+  checkout_url: string;
+  external_reference?: string;
+  created_at: string;
+  paid_at?: string;
+  expires_at?: string;
+  notes?: string;
+}
+
+export interface DriverDashboardData {
+  driver: User;
+  routes: PickupRoute[];
+  stats: {
+    assigned: number;
+    active: number;
+    completed: number;
+  };
 }

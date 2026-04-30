@@ -5,6 +5,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { DriverDashboard } from './pages/DriverDashboard';
 import { AuthCallback } from './pages/AuthCallback';
 
 export const router = createBrowserRouter([
@@ -35,6 +36,10 @@ export const router = createBrowserRouter([
       {
         path: 'admin',
         Component: AdminDashboard,
+      },
+      {
+        path: 'driver',
+        Component: DriverDashboard,
       },
     ],
   },

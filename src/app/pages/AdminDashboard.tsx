@@ -1,20 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings } from 'lucide-react';
+import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings, Truck } from 'lucide-react';
 import { Navigate } from 'react-router';
 import { VerificationQueue } from '../components/admin/VerificationQueue';
 import { PriceCatalog } from '../components/admin/PriceCatalog';
 import { UserManagement } from '../components/admin/UserManagement';
 import { WithdrawalPanel } from '../components/admin/WithdrawalPanel';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
+import { DriverOperations } from '../components/admin/DriverOperations';
 import { motion } from 'motion/react';
-import { api, ApiError, getErrorMessage } from '../lib/api';
+import {
+  api,
+  ApiError,
+  getErrorMessage,
+  type AssignPickupRoutePayload,
+  type CreateDriverPayload,
+} from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
 import type { AdminDashboardData } from '../types';
 import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function AdminDashboard() {
   const { user, accessToken, isLoading: authLoading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'withdrawals' | 'analytics'>('verification');
+  const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'drivers' | 'withdrawals' | 'analytics'>('verification');
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -23,6 +30,7 @@ export function AdminDashboard() {
     { id: 'verification' as const, label: 'Verifikasi', icon: CheckSquare },
     { id: 'prices' as const, label: 'Harga Limbah', icon: Settings },
     { id: 'users' as const, label: 'User Management', icon: Users },
+    { id: 'drivers' as const, label: 'Driver & Rute', icon: Truck },
     { id: 'withdrawals' as const, label: 'Penarikan Dana', icon: DollarSign },
     { id: 'analytics' as const, label: 'Analytics', icon: TrendingUp },
   ];
@@ -124,12 +132,43 @@ export function AdminDashboard() {
     await refreshDashboard();
   };
 
+  const handleCreateDriver = async (payload: CreateDriverPayload) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.createDriver(accessToken, payload);
+    await refreshDashboard();
+  };
+
+  const handleAssignRoute = async (payload: AssignPickupRoutePayload) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.assignPickupRoute(accessToken, payload);
+    await refreshDashboard();
+  };
+
+  const handleMarkPaymentPaid = async (paymentId: string) => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    await api.markPaymentPaid(accessToken, paymentId);
+    await refreshDashboard();
+  };
+
   if (!authLoading && !user) {
     return <Navigate to="/login" replace />;
   }
 
   if (!authLoading && user?.role === 'user') {
     return <Navigate to="/dashboard" replace />;
+  }
+
+  if (!authLoading && user?.role === 'driver') {
+    return <Navigate to="/driver" replace />;
   }
 
   if (authLoading || isLoadingDashboard) {
@@ -230,22 +269,23 @@ export function AdminDashboard() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="mb-6 overflow-x-auto">
-          <div className="flex gap-2 min-w-max">
+        <div className="mb-6">
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                title={tab.label}
                 className={`
-                  flex items-center gap-2 px-6 py-3 rounded-lg transition-all
+                  flex items-center gap-2 px-3 sm:px-5 py-2.5 rounded-lg transition-all shrink-0
                   ${activeTab === tab.id
                     ? 'bg-green-500 text-white shadow-lg shadow-green-500/50'
                     : 'bg-white/5 text-gray-400 hover:bg-white/10'
                   }
                 `}
               >
-                <tab.icon className="w-5 h-5" />
-                <span>{tab.label}</span>
+                <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline text-sm">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -269,6 +309,17 @@ export function AdminDashboard() {
             <PriceCatalog prices={dashboard.prices} onSavePrice={handleSavePrice} />
           )}
           {activeTab === 'users' && <UserManagement users={dashboard.users} />}
+          {activeTab === 'drivers' && (
+            <DriverOperations
+              drivers={dashboard.drivers}
+              pendingSubmissions={dashboard.pending_submissions}
+              pickupRoutes={dashboard.pickup_routes}
+              payments={dashboard.payments}
+              onCreateDriver={handleCreateDriver}
+              onAssignRoute={handleAssignRoute}
+              onMarkPaymentPaid={handleMarkPaymentPaid}
+            />
+          )}
           {activeTab === 'withdrawals' && (
             <WithdrawalPanel
               requests={dashboard.withdrawals}

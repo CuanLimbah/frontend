@@ -5,6 +5,18 @@ import { getErrorMessage } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
 import { PageLoader, PageErrorState } from '../components/common/PageState';
 
+function getRedirectForRole(role?: string | null) {
+  if (role === 'admin') {
+    return '/admin';
+  }
+
+  if (role === 'driver') {
+    return '/driver';
+  }
+
+  return '/dashboard';
+}
+
 export function AuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -38,7 +50,7 @@ export function AuthCallback() {
 
         if (isMounted) {
           toast.success('Login Google berhasil.');
-          navigate(redirectTo || (currentUser.role === 'admin' ? '/admin' : '/dashboard'), {
+          navigate(redirectTo || getRedirectForRole(currentUser.role), {
             replace: true,
           });
         }
@@ -61,7 +73,7 @@ export function AuthCallback() {
   if (isAuthenticated && !errorMessage) {
     return (
       <Navigate
-        to={redirectTo || (user?.role === 'admin' ? '/admin' : '/dashboard')}
+        to={redirectTo || getRedirectForRole(user?.role)}
         replace
       />
     );

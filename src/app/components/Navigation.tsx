@@ -1,10 +1,9 @@
-import { Link, useLocation, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Leaf, LogOut, LayoutDashboard, User, Menu, X } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
 import { useState } from 'react';
 
 export function Navigation() {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +15,9 @@ export function Navigation() {
   };
 
   const close = () => setIsOpen(false);
+
+  const dashboardPath =
+    user?.role === 'admin' ? '/admin' : user?.role === 'driver' ? '/driver' : '/dashboard';
 
   return (
     <>
@@ -71,14 +73,14 @@ export function Navigation() {
                 {user && (
                   <>
                     <Link
-                      to={user.role === 'admin' ? '/admin' : '/dashboard'}
+                      to={dashboardPath}
                       className="flex items-center gap-1.5 text-gray-300 hover:text-green-500 transition-colors text-sm whitespace-nowrap"
                     >
                       <LayoutDashboard className="w-4 h-4 shrink-0" />
                       <span>Dashboard</span>
                     </Link>
 
-                    {/* Email pill — capped width, always truncates */}
+                    {/* Email pill */}
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/30 min-w-0 max-w-[180px] lg:max-w-[220px]">
                       <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
                         <User className="w-3.5 h-3.5 text-green-500" />
@@ -119,7 +121,6 @@ export function Navigation() {
             }}
           >
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-2">
-
               {!user && !isLoading && (
                 <>
                   <a
@@ -168,7 +169,7 @@ export function Navigation() {
                   </div>
 
                   <Link
-                    to={user.role === 'admin' ? '/admin' : '/dashboard'}
+                    to={dashboardPath}
                     onClick={close}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-green-500 hover:bg-white/5 transition-colors text-base"
                   >

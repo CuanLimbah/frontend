@@ -1,6 +1,11 @@
 import type {
   AdminDashboardData,
   AuthResponse,
+  DriverDashboardData,
+  PaymentMethod,
+  PaymentRecord,
+  PickupRoute,
+  PickupRouteStatus,
   User,
   UserDashboardData,
   WithdrawalMethod,
@@ -141,9 +146,56 @@ export interface CreateWithdrawalPayload {
   account: string;
 }
 
+export interface CreateDriverPayload {
+  fullName: string;
+  email: string;
+  password: string;
+  phoneNumber?: string;
+  vehicleNumber?: string;
+}
+
+export interface AssignPickupRoutePayload {
+  submissionId: string;
+  driverId: string;
+  scheduledAt?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
+}
+
+export interface UpdatePickupRouteStatusPayload {
+  status: PickupRouteStatus;
+  notes?: string;
+}
+
+export interface CreatePaymentPayload {
+  amount: number;
+  method: PaymentMethod;
+  purpose?: string;
+  notes?: string;
+}
+
 export interface SessionData {
   accessToken: string;
   user: User;
+}
+
+export interface ChatAction {
+  type: 'NAVIGATE' | 'ACTION';
+  payload: string;
+  reason?: string;
+}
+
+export interface ChatResponse {
+  reply: string;
+  action?: ChatAction | null;
+  error?: string;
+}
+
+export interface ChatMessagePayload {
+  message: string;
+  userId?: string;
 }
 
 export interface UserDashboardActionHandlers {
@@ -257,6 +309,83 @@ export const api = {
         body: JSON.stringify({ reason }),
       },
       token,
+    );
+  },
+
+  createDriver(token: string, payload: CreateDriverPayload) {
+    return request<User>(
+      '/admin/drivers',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      token,
+    );
+  },
+
+  assignPickupRoute(token: string, payload: AssignPickupRoutePayload) {
+    return request<PickupRoute>(
+      '/admin/pickup-routes',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      token,
+    );
+  },
+
+  getDriverDashboard(token: string) {
+    return request<DriverDashboardData>('/driver/dashboard', {}, token);
+  },
+
+  updatePickupRouteStatus(
+    token: string,
+    routeId: string,
+    payload: UpdatePickupRouteStatusPayload,
+  ) {
+    return request<PickupRoute>(
+      `/driver/pickup-routes/${routeId}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+      token,
+    );
+  },
+
+  getMyPayments(token: string) {
+    return request<PaymentRecord[]>('/payments/me', {}, token);
+  },
+
+  createPayment(token: string, payload: CreatePaymentPayload) {
+    return request<PaymentRecord>(
+      '/payments',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      token,
+    );
+  },
+
+  markPaymentPaid(token: string, paymentId: string) {
+    return request<PaymentRecord>(
+      `/admin/payments/${paymentId}/mark-paid`,
+      {
+        method: 'PATCH',
+      },
+      token,
+    );
+  },
+
+  chat(token: string | null | undefined, payload: ChatMessagePayload) {
+    return request<ChatResponse>(
+      '/api/chat',
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+      token || undefined,
     );
   },
 };
