@@ -116,8 +116,10 @@ export function VerificationQueue({
   const handleRunQualityCheck = async (submission: WasteSubmission) => {
     const conditionDescription = conditionDescriptions[submission.id]?.trim();
 
-    if (!conditionDescription && !submission.image_url) {
-      toast.error('Deskripsi kondisi atau foto limbah diperlukan untuk AI Quality Check.');
+    if (!conditionDescription) {
+      toast.error(
+        'Masukkan deskripsi kondisi limbah karena AI belum menganalisis foto secara visual.',
+      );
       return;
     }
 
@@ -136,7 +138,24 @@ export function VerificationQueue({
     }
   };
 
-  const handleUseAiGrade = (submissionId: string, grade: QualityGrade) => {
+  const handleUseAiGrade = (
+    submissionId: string,
+    grade: QualityGrade,
+    confidence: number,
+  ) => {
+    if (confidence < 0.5) {
+      return;
+    }
+
+    if (
+      confidence < 0.7 &&
+      !window.confirm(
+        'Confidence AI masih sedang/rendah. Tetap gunakan rekomendasi grade AI?',
+      )
+    ) {
+      return;
+    }
+
     setQualityGrades((prev) => ({ ...prev, [submissionId]: grade }));
     setQualityGradeSources((prev) => ({ ...prev, [submissionId]: 'ai' }));
     toast.success(`Grade AI ${grade} dipakai sebagai grade final sementara.`);
@@ -234,6 +253,13 @@ export function VerificationQueue({
     return labels[level];
   };
 
+  const getAssessmentStatusLabel = (confidence: number) => {
+    if (confidence >= 0.8) return 'High Confidence';
+    if (confidence >= 0.6) return 'Medium Confidence';
+    if (confidence >= 0.4) return 'Low Confidence';
+    return 'Needs Manual Review';
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <h2 className="text-2xl text-white mb-6">Antrian Verifikasi</h2>
@@ -307,6 +333,10 @@ export function VerificationQueue({
                       rows={3}
                       className="w-full resize-none px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-blue-400 focus:outline-none"
                     />
+                    <p className="mt-2 text-xs text-gray-400 leading-relaxed">
+                      Catatan: Pada MVP ini AI belum membaca foto secara visual.
+                      Deskripsi kondisi dari admin digunakan bersama SOP RAG.
+                    </p>
                     <button
                       type="button"
                       onClick={() => void handleRunQualityCheck(submission)}
@@ -334,8 +364,13 @@ export function VerificationQueue({
                         </div>
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-gray-400">Confidence</span>
-                          <span className="text-white">
+                          <span className="text-right text-white">
                             {Math.round(getQualityResult(submission)!.confidence * 100)}%
+                            <span className="ml-2 text-xs text-blue-200">
+                              {getAssessmentStatusLabel(
+                                getQualityResult(submission)!.confidence,
+                              )}
+                            </span>
                           </span>
                         </div>
                         <div className="flex items-center justify-between gap-3">
@@ -390,12 +425,19 @@ export function VerificationQueue({
                             handleUseAiGrade(
                               submission.id,
                               getQualityResult(submission)!.recommendedGrade,
+                              getQualityResult(submission)!.confidence,
                             )
                           }
-                          className="w-full py-2 bg-green-500/20 text-green-300 rounded-lg border border-green-500/30 hover:bg-green-500/30 transition-all"
+                          disabled={getQualityResult(submission)!.confidence < 0.5}
+                          className="w-full py-2 bg-green-500/20 text-green-300 rounded-lg border border-green-500/30 hover:bg-green-500/30 transition-all disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           Gunakan Grade AI
                         </button>
+                        {getQualityResult(submission)!.confidence < 0.5 && (
+                          <p className="text-xs text-yellow-200 leading-relaxed">
+                            Confidence AI terlalu rendah. Silakan pilih grade manual.
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
