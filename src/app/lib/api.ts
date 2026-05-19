@@ -6,6 +6,9 @@ import type {
   PaymentRecord,
   PickupRoute,
   PickupRouteStatus,
+  QualityGrade,
+  QualityCheckResult,
+  QualityGradeSource,
   User,
   UserDashboardData,
   WithdrawalMethod,
@@ -140,6 +143,17 @@ export interface CreateSubmissionPayload {
   imageUrl?: string;
 }
 
+export interface VerifySubmissionPayload {
+  actualWeight: number;
+  qualityGrade?: QualityGrade;
+  qualityGradeSource?: QualityGradeSource;
+  adminQualityNotes?: string;
+}
+
+export interface QualityCheckPayload {
+  conditionDescription?: string;
+}
+
 export interface CreateWithdrawalPayload {
   amount: number;
   method: WithdrawalMethod;
@@ -258,12 +272,36 @@ export const api = {
     return request<AdminDashboardData>('/admin/dashboard', {}, token);
   },
 
-  verifySubmission(token: string, submissionId: string, actualWeight: number) {
+  verifySubmission(
+    token: string,
+    submissionId: string,
+    payload: VerifySubmissionPayload,
+  ) {
     return request<WasteSubmission>(
       `/admin/submissions/${submissionId}/verify`,
       {
         method: 'PATCH',
-        body: JSON.stringify({ actualWeight }),
+        body: JSON.stringify({
+          actualWeight: payload.actualWeight,
+          qualityGrade: payload.qualityGrade,
+          qualityGradeSource: payload.qualityGradeSource,
+          adminQualityNotes: payload.adminQualityNotes,
+        }),
+      },
+      token,
+    );
+  },
+
+  runQualityCheck(
+    token: string,
+    submissionId: string,
+    payload: QualityCheckPayload,
+  ) {
+    return request<QualityCheckResult>(
+      `/admin/submissions/${submissionId}/quality-check`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
       },
       token,
     );

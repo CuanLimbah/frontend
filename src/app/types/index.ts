@@ -17,6 +17,12 @@ export interface User {
 
 export type WasteType = 'food' | 'oil';
 
+export type QualityGrade = 'A' | 'B' | 'C';
+
+export type ContaminationLevel = 'none' | 'low' | 'medium' | 'high';
+
+export type QualityGradeSource = 'ai' | 'admin';
+
 export type SubmissionStatus = 'pending' | 'verified' | 'completed' | 'rejected';
 
 export interface WasteSubmission {
@@ -32,6 +38,39 @@ export interface WasteSubmission {
   completed_at?: string;
   notes?: string;
   earnings?: number;
+  price_snapshot_per_kg?: number;
+  quality_grade?: QualityGrade;
+  final_price_per_kg?: number;
+  pricing_model_version?: string;
+  pricing_breakdown?: unknown;
+  pricing_explanation?: string;
+  ai_quality_grade?: QualityGrade;
+  ai_quality_confidence?: number;
+  ai_contamination_level?: ContaminationLevel;
+  ai_quality_reason?: string;
+  ai_quality_tips?: string;
+  ai_quality_matched_criteria?: string[];
+  ai_quality_checked_at?: string;
+  ai_quality_model?: string;
+  ai_quality_source?: 'rag' | 'fallback_sop' | 'llm';
+  ai_quality_rag_source?: 'rag' | 'fallback_sop';
+  quality_grade_source?: QualityGradeSource;
+  admin_quality_notes?: string;
+}
+
+export interface QualityCheckResult {
+  submissionId: string;
+  wasteType: WasteType;
+  recommendedGrade: QualityGrade;
+  confidence: number;
+  contaminationLevel: ContaminationLevel;
+  reason: string;
+  matchedCriteria: string[];
+  tips: string;
+  requiresAdminReview: boolean;
+  modelProvider: string;
+  modelVersion: string;
+  ragSource: 'rag' | 'fallback_sop';
 }
 
 export interface Transaction {

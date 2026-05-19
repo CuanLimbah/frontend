@@ -18,6 +18,12 @@ const welcomeMessage: ChatMessage = {
   text: 'Halo, saya asisten CuanLimbah. Saya bisa bantu jelaskan fitur, alur setor limbah, atau arahkan kamu ke halaman yang tepat.',
 };
 
+const suggestedPrompts = [
+  'Estimasi cuan 10 kg minyak jelantah grade B',
+  'Kenapa harga setoran saya berubah?',
+  'Apa bedanya grade A, B, dan C?',
+];
+
 function createMessage(sender: ChatMessage['sender'], text: string): ChatMessage {
   return {
     id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -142,6 +148,19 @@ export function AiChatWidget() {
               </div>
             )}
             <div ref={messagesEndRef} />
+          </div>
+
+          <div className="ai-chat-suggestions" aria-label="Contoh pertanyaan">
+            {suggestedPrompts.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                onClick={() => setInput(prompt)}
+                disabled={isSending}
+              >
+                {prompt}
+              </button>
+            ))}
           </div>
 
           <form className="ai-chat-form" onSubmit={handleSubmit}>

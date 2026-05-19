@@ -16,7 +16,8 @@ import {
   type CreateDriverPayload,
 } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
-import type { AdminDashboardData } from '../types';
+import type { AdminDashboardData, QualityGrade } from '../types';
+import type { QualityCheckResult, QualityGradeSource } from '../types';
 import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function AdminDashboard() {
@@ -87,13 +88,39 @@ export function AdminDashboard() {
     setDashboard(response);
   };
 
-  const handleApproveSubmission = async (submissionId: string, actualWeight: number) => {
+  const handleApproveSubmission = async (
+    submissionId: string,
+    actualWeight: number,
+    qualityGrade: QualityGrade,
+    qualityGradeSource: QualityGradeSource,
+    adminQualityNotes?: string,
+  ) => {
     if (!accessToken) {
       throw new Error('Sesi admin tidak ditemukan.');
     }
 
-    await api.verifySubmission(accessToken, submissionId, actualWeight);
+    await api.verifySubmission(accessToken, submissionId, {
+      actualWeight,
+      qualityGrade,
+      qualityGradeSource,
+      adminQualityNotes,
+    });
     await refreshDashboard();
+  };
+
+  const handleRunQualityCheck = async (
+    submissionId: string,
+    conditionDescription?: string,
+  ): Promise<QualityCheckResult> => {
+    if (!accessToken) {
+      throw new Error('Sesi admin tidak ditemukan.');
+    }
+
+    const result = await api.runQualityCheck(accessToken, submissionId, {
+      conditionDescription,
+    });
+    await refreshDashboard();
+    return result;
   };
 
   const handleRejectSubmission = async (submissionId: string, reason: string) => {
@@ -301,8 +328,10 @@ export function AdminDashboard() {
           {activeTab === 'verification' && (
             <VerificationQueue
               submissions={dashboard.pending_submissions}
+              prices={dashboard.prices}
               onApprove={handleApproveSubmission}
               onReject={handleRejectSubmission}
+              onRunQualityCheck={handleRunQualityCheck}
             />
           )}
           {activeTab === 'prices' && (
