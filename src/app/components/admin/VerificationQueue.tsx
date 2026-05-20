@@ -116,10 +116,8 @@ export function VerificationQueue({
   const handleRunQualityCheck = async (submission: WasteSubmission) => {
     const conditionDescription = conditionDescriptions[submission.id]?.trim();
 
-    if (!conditionDescription) {
-      toast.error(
-        'Masukkan deskripsi kondisi limbah karena AI belum menganalisis foto secara visual.',
-      );
+    if (!conditionDescription && !submission.image_url) {
+      toast.error('Deskripsi kondisi diperlukan jika foto limbah tidak tersedia.');
       return;
     }
 
@@ -232,6 +230,7 @@ export function VerificationQueue({
       modelProvider: submission.ai_quality_source ?? 'fallback_sop',
       modelVersion: submission.ai_quality_model ?? 'quality-assessment-mvp-v1',
       ragSource: submission.ai_quality_rag_source ?? 'fallback_sop',
+      visualObservation: submission.ai_visual_observations,
     };
   };
 
@@ -258,6 +257,32 @@ export function VerificationQueue({
     if (confidence >= 0.6) return 'Medium Confidence';
     if (confidence >= 0.4) return 'Low Confidence';
     return 'Needs Manual Review';
+  };
+
+  const getImageQualityLabel = (
+    imageQuality: NonNullable<QualityCheckResult['visualObservation']>['imageQuality'],
+  ) => {
+    const labels = {
+      clear: 'Jelas',
+      blurry: 'Blur',
+      dark: 'Gelap',
+      unclear: 'Kurang jelas',
+      invalid: 'Tidak valid',
+    };
+    return labels[imageQuality];
+  };
+
+  const getDetectedWasteTypeLabel = (
+    wasteType: NonNullable<QualityCheckResult['visualObservation']>['detectedWasteType'],
+  ) => {
+    if (wasteType === 'oil') return 'Minyak Jelantah';
+    if (wasteType === 'food') return 'Sisa Makanan';
+    return 'Tidak diketahui';
+  };
+
+  const getBooleanLabel = (value?: boolean) => {
+    if (value == null) return '-';
+    return value ? 'Ya' : 'Tidak';
   };
 
   return (
@@ -334,8 +359,9 @@ export function VerificationQueue({
                       className="w-full resize-none px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-blue-400 focus:outline-none"
                     />
                     <p className="mt-2 text-xs text-gray-400 leading-relaxed">
-                      Catatan: Pada MVP ini AI belum membaca foto secara visual.
-                      Deskripsi kondisi dari admin digunakan bersama SOP RAG.
+                      AI akan membaca foto limbah jika tersedia, lalu
+                      mencocokkannya dengan SOP RAG. Deskripsi admin tetap
+                      disarankan untuk meningkatkan akurasi.
                     </p>
                     <button
                       type="button"
@@ -356,6 +382,134 @@ export function VerificationQueue({
 
                     {getQualityResult(submission) && (
                       <div className="mt-4 space-y-3 rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+                        {getQualityResult(submission)!.visualObservation && (
+                          <div className="space-y-3 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+                            <div className="text-white">Observasi Foto AI</div>
+                            <div className="grid gap-2">
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Kualitas Foto</span>
+                                <span className="text-white">
+                                  {getImageQualityLabel(
+                                    getQualityResult(submission)!.visualObservation!
+                                      .imageQuality,
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Limbah Terlihat</span>
+                                <span className="text-white">
+                                  {getBooleanLabel(
+                                    getQualityResult(submission)!.visualObservation!
+                                      .isWasteVisible,
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Jenis Terdeteksi</span>
+                                <span className="text-white">
+                                  {getDetectedWasteTypeLabel(
+                                    getQualityResult(submission)!.visualObservation!
+                                      .detectedWasteType,
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Warna</span>
+                                <span className="text-white text-right">
+                                  {getQualityResult(submission)!.visualObservation!
+                                    .color || '-'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Kejernihan</span>
+                                <span className="text-white text-right">
+                                  {getQualityResult(submission)!.visualObservation!
+                                    .clarity || '-'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Endapan</span>
+                                <span className="text-white">
+                                  {getQualityResult(submission)!.visualObservation!
+                                    .sedimentLevel || '-'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Air Terlihat</span>
+                                <span className="text-white">
+                                  {getBooleanLabel(
+                                    getQualityResult(submission)!.visualObservation!
+                                      .waterVisible,
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">
+                                  Sisa Makanan Terlihat
+                                </span>
+                                <span className="text-white">
+                                  {getBooleanLabel(
+                                    getQualityResult(submission)!.visualObservation!
+                                      .foodResidueVisible,
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">
+                                  Kontaminasi Non-Organik
+                                </span>
+                                <span className="text-white">
+                                  {getBooleanLabel(
+                                    getQualityResult(submission)!.visualObservation!
+                                      .nonOrganicContaminationVisible,
+                                  )}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Kondisi Wadah</span>
+                                <span className="text-white text-right">
+                                  {getQualityResult(submission)!.visualObservation!
+                                    .containerCondition || '-'}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-gray-400">Confidence Vision</span>
+                                <span className="text-white">
+                                  {Math.round(
+                                    getQualityResult(submission)!
+                                      .visualObservation!.visionConfidence * 100,
+                                  )}
+                                  %
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-gray-400 mb-1">Catatan Visual</div>
+                              <p className="text-gray-200 leading-relaxed">
+                                {
+                                  getQualityResult(submission)!.visualObservation!
+                                    .visualObservation
+                                }
+                              </p>
+                            </div>
+                            {getQualityResult(submission)!.visualObservation!
+                              .imageQuality !== 'clear' && (
+                              <p className="text-yellow-200 leading-relaxed">
+                                Foto kurang jelas. Admin perlu melakukan review
+                                manual atau meminta foto ulang.
+                              </p>
+                            )}
+                            {getQualityResult(submission)!.visualObservation!
+                              .detectedWasteType !== 'unknown' &&
+                              getQualityResult(submission)!.visualObservation!
+                                .detectedWasteType !== submission.waste_type && (
+                                <p className="text-yellow-200 leading-relaxed">
+                                  Jenis limbah pada foto tidak sepenuhnya cocok
+                                  dengan data submission.
+                                </p>
+                              )}
+                          </div>
+                        )}
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-gray-400">Rekomendasi Grade</span>
                           <span className="text-white">
