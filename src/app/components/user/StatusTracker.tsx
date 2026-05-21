@@ -7,6 +7,10 @@ interface StatusTrackerProps {
   submissions: WasteSubmission[];
 }
 
+function formatRupiah(value: number) {
+  return `Rp ${value.toLocaleString('id-ID')}`;
+}
+
 export function StatusTracker({ submissions }: StatusTrackerProps) {
   const getStatusIcon = (status: WasteSubmission['status']) => {
     switch (status) {
@@ -116,8 +120,44 @@ export function StatusTracker({ submissions }: StatusTrackerProps) {
                     <div className="absolute left-0 -translate-x-1/2 w-4 h-4 rounded-full bg-green-500 border-2 border-[#0a0a0f]" />
                     <div className="text-sm text-gray-400">Selesai</div>
                     <div className="text-green-500">
-                      +Rp {submission.earnings?.toLocaleString('id-ID')}
+                      +{formatRupiah(submission.earnings ?? 0)}
                     </div>
+                    {(submission.quality_grade ||
+                      submission.final_price_per_kg != null ||
+                      submission.pricing_explanation) && (
+                      <div className="mt-3 grid gap-2 rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+                        {submission.quality_grade && (
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <span className="text-gray-400">Grade Kualitas</span>
+                            <span className="text-white">{submission.quality_grade}</span>
+                          </div>
+                        )}
+                        {submission.final_price_per_kg != null && (
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <span className="text-gray-400">Harga Final / KG</span>
+                            <span className="text-white">
+                              {formatRupiah(submission.final_price_per_kg)}
+                            </span>
+                          </div>
+                        )}
+                        {submission.earnings != null && (
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                            <span className="text-gray-400">Total Cuan</span>
+                            <span className="text-green-400">
+                              {formatRupiah(submission.earnings)}
+                            </span>
+                          </div>
+                        )}
+                        {submission.pricing_explanation && (
+                          <div>
+                            <div className="text-gray-400 mb-1">Penjelasan Harga</div>
+                            <p className="text-gray-200 leading-relaxed">
+                              {submission.pricing_explanation}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
 
