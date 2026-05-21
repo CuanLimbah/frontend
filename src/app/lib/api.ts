@@ -6,6 +6,7 @@ import type {
   PaymentRecord,
   PickupRoute,
   PickupRouteStatus,
+  QualityAiAnalytics,
   QualityGrade,
   QualityCheckResult,
   QualityGradeSource,
@@ -154,6 +155,12 @@ export interface QualityCheckPayload {
   conditionDescription?: string;
 }
 
+export interface QualityAiAnalyticsParams {
+  startDate?: string;
+  endDate?: string;
+  wasteType?: WasteType;
+}
+
 export interface CreateWithdrawalPayload {
   amount: number;
   method: WithdrawalMethod;
@@ -270,6 +277,21 @@ export const api = {
 
   getAdminDashboard(token: string) {
     return request<AdminDashboardData>('/admin/dashboard', {}, token);
+  },
+
+  getQualityAiAnalytics(token: string, params?: QualityAiAnalyticsParams) {
+    const searchParams = new URLSearchParams();
+
+    if (params?.startDate) searchParams.set('startDate', params.startDate);
+    if (params?.endDate) searchParams.set('endDate', params.endDate);
+    if (params?.wasteType) searchParams.set('wasteType', params.wasteType);
+
+    const query = searchParams.toString();
+    return request<QualityAiAnalytics>(
+      `/admin/analytics/quality-ai${query ? `?${query}` : ''}`,
+      {},
+      token,
+    );
   },
 
   verifySubmission(

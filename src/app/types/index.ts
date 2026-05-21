@@ -97,6 +97,49 @@ export interface QualityCheckResult {
   visualObservation?: AiVisualObservations;
 }
 
+export interface QualityAiAnalytics {
+  totalQualityChecks: number;
+  totalAdminDecisions: number;
+  aiAcceptedCount: number;
+  adminOverrideCount: number;
+  overrideRate: number;
+  agreementRate: number;
+  averageConfidence: number | null;
+  lowConfidenceReviewCount: number;
+  ragUsage: {
+    rag: number;
+    fallback_sop: number;
+    unknown: number;
+  };
+  visionUsage: {
+    vision_llm: number;
+    fallback: number;
+    unknown: number;
+  };
+  gradeDistribution: {
+    ai: Record<QualityGrade, number>;
+    admin: Record<QualityGrade, number>;
+  };
+  overrideMatrix: Record<string, number>;
+  byWasteType: Record<
+    WasteType,
+    {
+      totalQualityChecks: number;
+      adminOverrideCount: number;
+      averageConfidence: number | null;
+    }
+  >;
+  recentOverrides: Array<{
+    submission_id: string;
+    waste_type: WasteType;
+    ai_quality_grade?: QualityGrade;
+    final_quality_grade?: QualityGrade;
+    ai_quality_confidence?: number;
+    admin_quality_notes?: string;
+    created_at: string;
+  }>;
+}
+
 export interface Transaction {
   id: string;
   user_id: string;
