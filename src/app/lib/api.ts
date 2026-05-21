@@ -7,6 +7,8 @@ import type {
   PickupRoute,
   PickupRouteStatus,
   QualityAiAnalytics,
+  QualityFeedbackSeverity,
+  QualityFeedbackTag,
   QualityGrade,
   QualityCheckResult,
   QualityGradeSource,
@@ -149,6 +151,9 @@ export interface VerifySubmissionPayload {
   qualityGrade?: QualityGrade;
   qualityGradeSource?: QualityGradeSource;
   adminQualityNotes?: string;
+  overrideReasonTags?: QualityFeedbackTag[];
+  overridePrimaryReason?: QualityFeedbackTag;
+  overrideFeedbackSeverity?: QualityFeedbackSeverity;
 }
 
 export interface QualityCheckPayload {
@@ -308,6 +313,9 @@ export const api = {
           qualityGrade: payload.qualityGrade,
           qualityGradeSource: payload.qualityGradeSource,
           adminQualityNotes: payload.adminQualityNotes,
+          overrideReasonTags: payload.overrideReasonTags,
+          overridePrimaryReason: payload.overridePrimaryReason,
+          overrideFeedbackSeverity: payload.overrideFeedbackSeverity,
         }),
       },
       token,

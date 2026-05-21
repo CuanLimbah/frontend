@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { CheckCircle, XCircle, Package, Image as ImageIcon } from 'lucide-react';
 import type {
   QualityCheckResult,
+  QualityFeedbackSeverity,
+  QualityFeedbackTag,
   QualityGrade,
   QualityGradeSource,
   WastePrice,
@@ -21,6 +23,9 @@ interface VerificationQueueProps {
     qualityGrade: QualityGrade,
     qualityGradeSource: QualityGradeSource,
     adminQualityNotes?: string,
+    overrideReasonTags?: QualityFeedbackTag[],
+    overridePrimaryReason?: QualityFeedbackTag,
+    overrideFeedbackSeverity?: QualityFeedbackSeverity,
   ) => Promise<void>;
   onReject: (submissionId: string, reason: string) => Promise<void>;
   onRunQualityCheck: (
@@ -52,6 +57,36 @@ const qualityMultipliers: Record<WasteSubmission['waste_type'], Record<QualityGr
   },
 };
 
+const feedbackTagOptions: Array<{ value: QualityFeedbackTag; label: string }> = [
+  { value: 'photo_unclear', label: 'Foto tidak jelas' },
+  { value: 'visual_missed_sediment', label: 'AI melewatkan endapan' },
+  { value: 'visual_missed_water', label: 'AI melewatkan air' },
+  { value: 'visual_missed_food_residue', label: 'AI melewatkan sisa makanan' },
+  {
+    value: 'visual_missed_non_organic_contamination',
+    label: 'AI melewatkan kontaminasi non-organik',
+  },
+  { value: 'wrong_waste_type_detected', label: 'Jenis limbah terdeteksi salah' },
+  { value: 'sop_mismatch', label: 'SOP tidak cocok' },
+  { value: 'rag_context_insufficient', label: 'Konteks RAG kurang cukup' },
+  { value: 'fallback_sop_used', label: 'Fallback SOP digunakan' },
+  { value: 'vision_fallback_used', label: 'Vision fallback digunakan' },
+  { value: 'ai_too_optimistic', label: 'AI terlalu optimistis' },
+  { value: 'ai_too_conservative', label: 'AI terlalu konservatif' },
+  { value: 'admin_manual_inspection', label: 'Pemeriksaan manual admin' },
+  { value: 'pricing_sensitive_case', label: 'Kasus sensitif pricing' },
+  { value: 'other', label: 'Lainnya' },
+];
+
+const feedbackSeverityOptions: Array<{
+  value: QualityFeedbackSeverity;
+  label: string;
+}> = [
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+];
+
 function formatRupiah(value: number) {
   return `Rp ${value.toLocaleString('id-ID')}`;
 }
@@ -69,6 +104,15 @@ export function VerificationQueue({
     Record<string, QualityGradeSource>
   >({});
   const [adminQualityNotes, setAdminQualityNotes] = useState<Record<string, string>>({});
+  const [overrideReasonTags, setOverrideReasonTags] = useState<
+    Record<string, QualityFeedbackTag[]>
+  >({});
+  const [overridePrimaryReasons, setOverridePrimaryReasons] = useState<
+    Record<string, QualityFeedbackTag | ''>
+  >({});
+  const [overrideFeedbackSeverities, setOverrideFeedbackSeverities] = useState<
+    Record<string, QualityFeedbackSeverity | ''>
+  >({});
   const [conditionDescriptions, setConditionDescriptions] = useState<Record<string, string>>({});
   const [qualityResults, setQualityResults] = useState<
     Record<string, QualityCheckResult>
@@ -89,6 +133,11 @@ export function VerificationQueue({
     const qualityGrade = qualityGrades[submissionId] || 'A';
     const qualityGradeSource = qualityGradeSources[submissionId] || 'admin';
     const qualityNotes = adminQualityNotes[submissionId]?.trim() || undefined;
+    const selectedOverrideTags = overrideReasonTags[submissionId] || [];
+    const selectedPrimaryReason =
+      overridePrimaryReasons[submissionId] || undefined;
+    const selectedSeverity =
+      overrideFeedbackSeverities[submissionId] || undefined;
 
     try {
       setProcessingId(submissionId);
@@ -98,11 +147,20 @@ export function VerificationQueue({
         qualityGrade,
         qualityGradeSource,
         qualityNotes,
+        selectedOverrideTags,
+        selectedPrimaryReason,
+        selectedSeverity,
       );
       setActualWeight((prev) => ({ ...prev, [submissionId]: '' }));
       setQualityGrades((prev) => ({ ...prev, [submissionId]: 'A' }));
       setQualityGradeSources((prev) => ({ ...prev, [submissionId]: 'admin' }));
       setAdminQualityNotes((prev) => ({ ...prev, [submissionId]: '' }));
+      setOverrideReasonTags((prev) => ({ ...prev, [submissionId]: [] }));
+      setOverridePrimaryReasons((prev) => ({ ...prev, [submissionId]: '' }));
+      setOverrideFeedbackSeverities((prev) => ({
+        ...prev,
+        [submissionId]: '',
+      }));
       toast.success(
         `Setoran berhasil diverifikasi dengan berat ${weight} KG dan grade ${qualityGrade}.`,
       );
@@ -236,6 +294,28 @@ export function VerificationQueue({
 
   const getQualityResult = (submission: WasteSubmission) =>
     qualityResults[submission.id] ?? getSavedQualityResult(submission);
+
+  const getFinalGrade = (submission: WasteSubmission) =>
+    qualityGrades[submission.id] || 'A';
+
+  const isOverridingAiGrade = (submission: WasteSubmission) => {
+    const aiGrade = getQualityResult(submission)?.recommendedGrade;
+    return Boolean(aiGrade && aiGrade !== getFinalGrade(submission));
+  };
+
+  const toggleOverrideTag = (
+    submissionId: string,
+    tag: QualityFeedbackTag,
+  ) => {
+    setOverrideReasonTags((prev) => {
+      const current = prev[submissionId] || [];
+      const next = current.includes(tag)
+        ? current.filter((item) => item !== tag)
+        : [...current, tag];
+
+      return { ...prev, [submissionId]: next };
+    });
+  };
 
   const getRagSourceLabel = (source: QualityCheckResult['ragSource']) =>
     source === 'rag' ? 'Supabase RAG' : 'Fallback SOP';
@@ -676,6 +756,104 @@ export function VerificationQueue({
                       ))}
                     </select>
                   </div>
+
+                  {isOverridingAiGrade(submission) && (
+                    <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
+                      <div className="text-white mb-2">Feedback Override AI</div>
+                      <p className="mb-3 text-xs text-yellow-100 leading-relaxed">
+                        Alasan override membantu sistem mengevaluasi performa AI.
+                        Field ini opsional dan tidak mengubah perhitungan pricing.
+                      </p>
+
+                      <div className="mb-4 grid gap-2">
+                        {feedbackTagOptions.map((option) => {
+                          const selected =
+                            overrideReasonTags[submission.id]?.includes(
+                              option.value,
+                            ) ?? false;
+
+                          return (
+                            <label
+                              key={option.value}
+                              className="flex items-center gap-2 text-sm text-gray-200"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() =>
+                                  toggleOverrideTag(submission.id, option.value)
+                                }
+                                className="h-4 w-4 rounded border-white/20 bg-white/5"
+                              />
+                              <span>{option.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mb-3">
+                        <label className="block text-sm text-gray-300 mb-2">
+                          Alasan Utama
+                        </label>
+                        <select
+                          value={overridePrimaryReasons[submission.id] || ''}
+                          onChange={(event) =>
+                            setOverridePrimaryReasons((prev) => ({
+                              ...prev,
+                              [submission.id]: event.target.value as
+                                | QualityFeedbackTag
+                                | '',
+                            }))
+                          }
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-yellow-400 focus:outline-none"
+                        >
+                          <option value="" className="bg-[#0a0a0f]">
+                            Pilih alasan utama
+                          </option>
+                          {feedbackTagOptions.map((option) => (
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              className="bg-[#0a0a0f]"
+                            >
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm text-gray-300 mb-2">
+                          Severity
+                        </label>
+                        <select
+                          value={overrideFeedbackSeverities[submission.id] || ''}
+                          onChange={(event) =>
+                            setOverrideFeedbackSeverities((prev) => ({
+                              ...prev,
+                              [submission.id]: event.target.value as
+                                | QualityFeedbackSeverity
+                                | '',
+                            }))
+                          }
+                          className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white focus:border-yellow-400 focus:outline-none"
+                        >
+                          <option value="" className="bg-[#0a0a0f]">
+                            Pilih severity
+                          </option>
+                          {feedbackSeverityOptions.map((option) => (
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              className="bg-[#0a0a0f]"
+                            >
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mb-6">
                     <label className="block text-white mb-2">Catatan Kualitas Admin</label>

@@ -17,7 +17,12 @@ import {
   type CreateDriverPayload,
 } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
-import type { AdminDashboardData, QualityGrade } from '../types';
+import type {
+  AdminDashboardData,
+  QualityFeedbackSeverity,
+  QualityFeedbackTag,
+  QualityGrade,
+} from '../types';
 import type { QualityCheckResult, QualityGradeSource } from '../types';
 import { PageErrorState, PageLoader } from '../components/common/PageState';
 
@@ -96,6 +101,9 @@ export function AdminDashboard() {
     qualityGrade: QualityGrade,
     qualityGradeSource: QualityGradeSource,
     adminQualityNotes?: string,
+    overrideReasonTags?: QualityFeedbackTag[],
+    overridePrimaryReason?: QualityFeedbackTag,
+    overrideFeedbackSeverity?: QualityFeedbackSeverity,
   ) => {
     if (!accessToken) {
       throw new Error('Sesi admin tidak ditemukan.');
@@ -106,6 +114,9 @@ export function AdminDashboard() {
       qualityGrade,
       qualityGradeSource,
       adminQualityNotes,
+      overrideReasonTags,
+      overridePrimaryReason,
+      overrideFeedbackSeverity,
     });
     await refreshDashboard();
   };

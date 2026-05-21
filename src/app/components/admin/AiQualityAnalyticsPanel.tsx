@@ -38,6 +38,12 @@ function getWasteTypeLabel(type: WasteType) {
   return type === 'oil' ? 'Minyak Jelantah' : 'Sisa Makanan';
 }
 
+function getCountRows(counts: Record<string, number> | undefined) {
+  return Object.entries(counts ?? {})
+    .filter(([, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1]);
+}
+
 function MetricCard({
   label,
   value,
@@ -139,6 +145,19 @@ export function AiQualityAnalyticsPanel({
           count: analytics?.overrideMatrix[transition] ?? 0,
         }))
         .filter((row) => row.count > 0),
+    [analytics],
+  );
+
+  const feedbackRows = useMemo(
+    () => getCountRows(analytics?.feedbackTagCounts),
+    [analytics],
+  );
+  const primaryReasonRows = useMemo(
+    () => getCountRows(analytics?.primaryOverrideReasons),
+    [analytics],
+  );
+  const aiErrorRows = useMemo(
+    () => getCountRows(analytics?.aiErrorPatterns),
     [analytics],
   );
 
@@ -407,6 +426,50 @@ export function AiQualityAnalyticsPanel({
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-3">
+            {[
+              {
+                title: 'Feedback Admin',
+                rows: feedbackRows,
+                empty: 'Belum ada feedback terstruktur dari admin.',
+              },
+              {
+                title: 'Primary Override Reasons',
+                rows: primaryReasonRows,
+                empty: 'Belum ada alasan utama override.',
+              },
+              {
+                title: 'AI Error Patterns',
+                rows: aiErrorRows,
+                empty: 'Belum ada pola error AI.',
+              },
+            ].map((section) => (
+              <div
+                key={section.title}
+                className="rounded-xl border border-white/10 bg-white/5 p-5"
+              >
+                <h3 className="text-white mb-4">{section.title}</h3>
+                {section.rows.length === 0 ? (
+                  <p className="text-sm text-gray-400">{section.empty}</p>
+                ) : (
+                  <div className="space-y-3">
+                    {section.rows.map(([label, count]) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between gap-3 rounded-lg border border-white/10 p-3"
+                      >
+                        <span className="text-sm text-gray-200">{label}</span>
+                        <span className="text-green-300">
+                          {formatNumber(count)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
 
           <div className="rounded-xl border border-white/10 bg-white/5 p-5">
