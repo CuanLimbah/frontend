@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings, Truck } from 'lucide-react';
+import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings, Truck, Brain } from 'lucide-react';
 import { Navigate } from 'react-router';
 import { VerificationQueue } from '../components/admin/VerificationQueue';
 import { PriceCatalog } from '../components/admin/PriceCatalog';
@@ -7,6 +7,7 @@ import { UserManagement } from '../components/admin/UserManagement';
 import { WithdrawalPanel } from '../components/admin/WithdrawalPanel';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
 import { DriverOperations } from '../components/admin/DriverOperations';
+import { AiQualityAnalyticsPanel } from '../components/admin/AiQualityAnalyticsPanel';
 import { motion } from 'motion/react';
 import {
   api,
@@ -22,7 +23,7 @@ import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function AdminDashboard() {
   const { user, accessToken, isLoading: authLoading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'drivers' | 'withdrawals' | 'analytics'>('verification');
+  const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'drivers' | 'withdrawals' | 'analytics' | 'aiAnalytics'>('verification');
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export function AdminDashboard() {
     { id: 'drivers' as const, label: 'Driver & Rute', icon: Truck },
     { id: 'withdrawals' as const, label: 'Penarikan Dana', icon: DollarSign },
     { id: 'analytics' as const, label: 'Analytics', icon: TrendingUp },
+    { id: 'aiAnalytics' as const, label: 'AI Analytics', icon: Brain },
   ];
 
   useEffect(() => {
@@ -357,6 +359,9 @@ export function AdminDashboard() {
             />
           )}
           {activeTab === 'analytics' && <AnalyticsDashboard stats={dashboard.stats} />}
+          {activeTab === 'aiAnalytics' && accessToken && (
+            <AiQualityAnalyticsPanel accessToken={accessToken} />
+          )}
         </motion.div>
       </div>
     </div>
