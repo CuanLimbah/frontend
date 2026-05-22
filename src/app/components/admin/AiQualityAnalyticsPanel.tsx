@@ -73,6 +73,13 @@ function getDefaultMultimodalRag(): NonNullable<
       embedding_unavailable: 0,
       unknown: 0,
     },
+    providerUsage: {
+      supabase_pgvector: 0,
+      application_cosine: 0,
+      fallback_none: 0,
+      embedding_unavailable: 0,
+      unknown: 0,
+    },
     byWasteType: {
       oil: {
         totalAiQualityChecks: 0,
@@ -125,6 +132,16 @@ function getMultimodalInterpretations(
     multimodal.overrideRateWhenUsed > multimodal.overrideRateWhenNotUsed
   ) {
     messages.push('Perlu audit kualitas retrieval kasus historis.');
+  }
+  if ((multimodal.providerUsage?.supabase_pgvector ?? 0) > 0) {
+    messages.push(
+      'Supabase pgvector sudah digunakan sebagai production vector search.',
+    );
+  }
+  if ((multimodal.providerUsage?.application_cosine ?? 0) > 0) {
+    messages.push(
+      'Sebagian retrieval masih memakai fallback application-level cosine.',
+    );
   }
 
   return messages;
@@ -525,6 +542,35 @@ export function AiQualityAnalyticsPanel({
                   { label: 'Unknown', value: multimodalRag.sourceUsage.unknown },
                 ]}
               />
+              <UsageBox
+                title="Provider Retrieval"
+                rows={[
+                  {
+                    label: 'Supabase pgvector',
+                    value: multimodalRag.providerUsage?.supabase_pgvector ?? 0,
+                  },
+                  {
+                    label: 'Application cosine fallback',
+                    value: multimodalRag.providerUsage?.application_cosine ?? 0,
+                  },
+                  {
+                    label: 'Fallback none',
+                    value: multimodalRag.providerUsage?.fallback_none ?? 0,
+                  },
+                  {
+                    label: 'Embedding unavailable',
+                    value:
+                      multimodalRag.providerUsage?.embedding_unavailable ?? 0,
+                  },
+                  {
+                    label: 'Unknown',
+                    value: multimodalRag.providerUsage?.unknown ?? 0,
+                  },
+                ]}
+              />
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-1">
               <div className="rounded-lg border border-white/10 bg-white/5 p-4">
                 <h4 className="text-white mb-4">Interpretasi</h4>
                 {multimodalInterpretations.length === 0 ? (

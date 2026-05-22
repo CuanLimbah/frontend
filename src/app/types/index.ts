@@ -110,6 +110,7 @@ export interface WasteSubmission {
   ai_visual_checked_at?: string;
   ai_visual_model?: string;
   ai_visual_source?: 'vision_llm' | 'fallback';
+  ai_multimodal_rag_provider?: string;
   quality_grade_source?: QualityGradeSource;
   admin_quality_notes?: string;
   quality_feedback?: QualityFeedback;
@@ -184,6 +185,13 @@ export interface QualityAiAnalytics {
     sourceUsage: {
       similar_quality_cases: number;
       none: number;
+      embedding_unavailable: number;
+      unknown: number;
+    };
+    providerUsage?: {
+      application_cosine: number;
+      supabase_pgvector: number;
+      fallback_none: number;
       embedding_unavailable: number;
       unknown: number;
     };
