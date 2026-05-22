@@ -414,6 +414,7 @@ function LiveTrackerPanel({
   onRequestGpsAccess,
 }: LiveTrackerPanelProps) {
   const destination = getRouteDestination(route);
+  const routeMissingDropPoint = Boolean(route && !destination);
   const distanceKm =
     currentPosition && destination
       ? calculateDistanceKm(currentPosition, destination)
@@ -461,6 +462,13 @@ function LiveTrackerPanel({
         </span>
       </div>
 
+      {routeMissingDropPoint && (
+        <div className="mb-5 rounded-xl border border-yellow-400/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+          Rute aktif ini belum punya koordinat drop point. Buat/assign ulang rute dari admin dengan memilih
+          drop point di map supaya tujuan tracker muncul.
+        </div>
+      )}
+
       <div className="grid lg:grid-cols-[1.35fr_0.65fr] gap-5">
         <div className="relative">
           <EmbeddedMap
@@ -493,6 +501,11 @@ function LiveTrackerPanel({
               </div>
             </div>
           )}
+          {currentPosition && routeMissingDropPoint && (
+            <div className="absolute left-4 top-4 max-w-md rounded-xl border border-yellow-400/30 bg-slate-950/90 p-4 text-sm text-yellow-100 backdrop-blur">
+              Posisi driver sudah tampil. Tujuan belum tampil karena rute ini belum dihubungkan ke drop point.
+            </div>
+          )}
           <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-black/45 border border-white/10 p-4 backdrop-blur">
             <div className="text-sm text-gray-400">Estimasi jarak ke tujuan</div>
             <div className="text-3xl text-white">{formatDistance(distanceKm)}</div>
@@ -507,8 +520,12 @@ function LiveTrackerPanel({
           </div>
           <div className="p-4 rounded-xl bg-black/20 border border-white/10">
             <div className="text-sm text-gray-500 mb-1">Tujuan</div>
-            <div className="text-white">{destination?.name || '-'}</div>
-            <div className="text-sm text-gray-400">{destination?.address || '-'}</div>
+            <div className="text-white">
+              {destination?.name || (routeMissingDropPoint ? 'Drop point belum di-assign' : '-')}
+            </div>
+            <div className="text-sm text-gray-400">
+              {destination?.address || (routeMissingDropPoint ? 'Assign ulang rute lewat admin' : '-')}
+            </div>
           </div>
           <div className="p-4 rounded-xl bg-black/20 border border-white/10">
             <div className="text-sm text-gray-500 mb-1">Koordinat driver</div>

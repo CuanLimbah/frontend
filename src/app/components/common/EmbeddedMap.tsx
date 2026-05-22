@@ -247,8 +247,13 @@ export function EmbeddedMap({
   }
 
   return (
-    <div className={`overflow-hidden rounded-2xl border border-white/10 bg-black/20 ${className}`}>
-      <div ref={mapElementRef} className="h-full min-h-[inherit] w-full" />
+    <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 ${className}`}>
+      {!leaflet && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 text-sm text-gray-400">
+          Memuat map...
+        </div>
+      )}
+      <div ref={mapElementRef} className="absolute inset-0 h-full min-h-full w-full" />
     </div>
   );
 }

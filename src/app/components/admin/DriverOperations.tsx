@@ -203,11 +203,13 @@ export function DriverOperations({
               onChange={(event) =>
                 setRouteForm((current) => ({ ...current, submissionId: event.target.value }))
               }
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
             >
-              <option value="">Pilih setoran pending</option>
+              <option value="" className="bg-[#0a0a0f] text-white">
+                Pilih setoran pending
+              </option>
               {pendingSubmissions.map((submission) => (
-                <option key={submission.id} value={submission.id}>
+                <option key={submission.id} value={submission.id} className="bg-[#0a0a0f] text-white">
                   {submission.id} - {submission.waste_type} - {submission.estimated_weight} KG
                 </option>
               ))}
@@ -217,11 +219,13 @@ export function DriverOperations({
               onChange={(event) =>
                 setRouteForm((current) => ({ ...current, driverId: event.target.value }))
               }
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
             >
-              <option value="">Pilih driver</option>
+              <option value="" className="bg-[#0a0a0f] text-white">
+                Pilih driver
+              </option>
               {drivers.map((driver) => (
-                <option key={driver.id} value={driver.id}>
+                <option key={driver.id} value={driver.id} className="bg-[#0a0a0f] text-white">
                   {driver.full_name} {driver.vehicle_number ? `- ${driver.vehicle_number}` : ''}
                 </option>
               ))}
@@ -231,11 +235,13 @@ export function DriverOperations({
               onChange={(event) =>
                 setRouteForm((current) => ({ ...current, dropPointId: event.target.value }))
               }
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
             >
-              <option value="">Pilih drop point tujuan</option>
+              <option value="" className="bg-[#0a0a0f] text-white">
+                Pilih drop point tujuan
+              </option>
               {dropPoints.map((dropPoint) => (
-                <option key={dropPoint.id} value={dropPoint.id}>
+                <option key={dropPoint.id} value={dropPoint.id} className="bg-[#0a0a0f] text-white">
                   {dropPoint.name} - {dropPoint.address}
                 </option>
               ))}

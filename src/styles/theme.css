@@ -178,4 +178,20 @@
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
   }
+
+  select {
+    color-scheme: dark;
+    background-color: #0a0a0f;
+    color: #ffffff;
+  }
+
+  select option,
+  select optgroup {
+    background-color: #0a0a0f;
+    color: #ffffff;
+  }
+
+  select option:disabled {
+    color: #9ca3af;
+  }
 }
