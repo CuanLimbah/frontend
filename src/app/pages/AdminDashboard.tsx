@@ -354,6 +354,7 @@ export function AdminDashboard() {
           {activeTab === 'drivers' && (
             <DriverOperations
               drivers={dashboard.drivers}
+              dropPoints={dashboard.drop_points ?? []}
               pendingSubmissions={dashboard.pending_submissions}
               pickupRoutes={dashboard.pickup_routes}
               payments={dashboard.payments}

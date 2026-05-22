@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { CalendarClock, Plus, Route, Truck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
-import type { PaymentRecord, PickupRoute, User, WasteSubmission } from '../../types';
+import type { DropPoint, PaymentRecord, PickupRoute, User, WasteSubmission } from '../../types';
 import {
   getErrorMessage,
   type AssignPickupRoutePayload,
   type CreateDriverPayload,
 } from '../../lib/api';
+import { EmbeddedMap, type MapPoint } from '../common/EmbeddedMap';
 
 interface DriverOperationsProps {
   drivers: User[];
+  dropPoints: DropPoint[];
   pendingSubmissions: WasteSubmission[];
   pickupRoutes: PickupRoute[];
   payments: PaymentRecord[];
@@ -20,6 +22,7 @@ interface DriverOperationsProps {
 
 export function DriverOperations({
   drivers,
+  dropPoints,
   pendingSubmissions,
   pickupRoutes,
   payments,
@@ -37,8 +40,8 @@ export function DriverOperations({
   const [routeForm, setRouteForm] = useState({
     submissionId: pendingSubmissions[0]?.id ?? '',
     driverId: drivers[0]?.id ?? '',
+    dropPointId: dropPoints[0]?.id ?? '',
     scheduledAt: '',
-    address: '',
   });
   const [isCreatingDriver, setIsCreatingDriver] = useState(false);
   const [isAssigningRoute, setIsAssigningRoute] = useState(false);
@@ -69,13 +72,13 @@ export function DriverOperations({
       await onAssignRoute({
         submissionId: routeForm.submissionId,
         driverId: routeForm.driverId,
+        dropPointId: routeForm.dropPointId,
         scheduledAt: routeForm.scheduledAt
           ? new Date(routeForm.scheduledAt).toISOString()
           : undefined,
-        address: routeForm.address,
       });
       toast.success('Rute penjemputan berhasil dijadwalkan.');
-      setRouteForm((current) => ({ ...current, address: '', scheduledAt: '' }));
+      setRouteForm((current) => ({ ...current, scheduledAt: '' }));
     } catch (error) {
       toast.error(getErrorMessage(error, 'Gagal menjadwalkan rute.'));
     } finally {
@@ -94,6 +97,30 @@ export function DriverOperations({
       setProcessingPaymentId(null);
     }
   };
+
+  const getRouteDropPointLabel = (route: PickupRoute) => {
+    const dropPoint = dropPoints.find((item) => item.id === route.drop_point_id);
+
+    if (dropPoint) {
+      return `${dropPoint.name} - ${dropPoint.address}`;
+    }
+
+    return (
+      route.drop_point_name ||
+      route.drop_point_address ||
+      route.address ||
+      'Drop point belum diisi'
+    );
+  };
+  const selectedDropPoint = dropPoints.find((dropPoint) => dropPoint.id === routeForm.dropPointId);
+  const dropPointMapPoints: MapPoint[] = dropPoints.map((dropPoint) => ({
+    id: dropPoint.id,
+    label: dropPoint.name,
+    address: dropPoint.address,
+    latitude: dropPoint.latitude,
+    longitude: dropPoint.longitude,
+    tone: dropPoint.id === routeForm.dropPointId ? 'selected' : 'dropPoint',
+  }));
 
   return (
     <div className="grid xl:grid-cols-[420px_1fr] gap-6">
@@ -199,6 +226,50 @@ export function DriverOperations({
                 </option>
               ))}
             </select>
+            <select
+              value={routeForm.dropPointId}
+              onChange={(event) =>
+                setRouteForm((current) => ({ ...current, dropPointId: event.target.value }))
+              }
+              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+            >
+              <option value="">Pilih drop point tujuan</option>
+              {dropPoints.map((dropPoint) => (
+                <option key={dropPoint.id} value={dropPoint.id}>
+                  {dropPoint.name} - {dropPoint.address}
+                </option>
+              ))}
+            </select>
+            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-sm text-white">Map Drop Point</div>
+                  <div className="text-xs text-gray-400">
+                    Klik marker untuk memilih tujuan rute.
+                  </div>
+                </div>
+                <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-300">
+                  {selectedDropPoint ? 'Dipilih' : 'Belum dipilih'}
+                </span>
+              </div>
+              <EmbeddedMap
+                points={dropPointMapPoints}
+                emptyMessage="Belum ada drop point dengan koordinat."
+                className="h-[280px]"
+                onPointSelect={(pointId) =>
+                  setRouteForm((current) => ({ ...current, dropPointId: pointId }))
+                }
+              />
+              <div className="mt-3 rounded-lg bg-white/5 p-3 text-sm">
+                <div className="text-white">{selectedDropPoint?.name || 'Pilih drop point'}</div>
+                <div className="text-gray-400">{selectedDropPoint?.address || '-'}</div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {selectedDropPoint
+                    ? `${selectedDropPoint.latitude.toFixed(6)}, ${selectedDropPoint.longitude.toFixed(6)}`
+                    : 'Koordinat belum dipilih'}
+                </div>
+              </div>
+            </div>
             <input
               type="datetime-local"
               value={routeForm.scheduledAt}
@@ -207,18 +278,14 @@ export function DriverOperations({
               }
               className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
             />
-            <textarea
-              value={routeForm.address}
-              onChange={(event) =>
-                setRouteForm((current) => ({ ...current, address: event.target.value }))
-              }
-              placeholder="Alamat penjemputan"
-              rows={3}
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
-            />
             <button
               onClick={() => void handleAssignRoute()}
-              disabled={isAssigningRoute || !routeForm.submissionId || !routeForm.driverId}
+              disabled={
+                isAssigningRoute ||
+                !routeForm.submissionId ||
+                !routeForm.driverId ||
+                !routeForm.dropPointId
+              }
               className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
               <Route className="w-5 h-5" />
@@ -268,7 +335,7 @@ export function DriverOperations({
                   </div>
                   <div className="mt-3 text-sm text-gray-400">
                     {new Date(route.scheduled_at).toLocaleString('id-ID')} -{' '}
-                    {route.address || 'Alamat belum diisi'}
+                    {getRouteDropPointLabel(route)}
                   </div>
                 </div>
               ))

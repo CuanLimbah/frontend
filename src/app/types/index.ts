@@ -310,6 +310,7 @@ export interface AdminWithdrawals {
 export interface AdminDashboardData {
   stats: AdminStats;
   prices: WastePrice[];
+  drop_points: DropPoint[];
   pending_submissions: WasteSubmission[];
   users: AdminUser[];
   drivers: User[];
@@ -330,9 +331,13 @@ export interface PickupRoute {
   submission_id: string;
   user_id: string;
   driver_id: string;
+  drop_point_id?: string;
   address?: string;
   latitude?: number;
   longitude?: number;
+  driver_latitude?: number;
+  driver_longitude?: number;
+  driver_location_updated_at?: string;
   scheduled_at: string;
   status: PickupRouteStatus;
   created_at: string;
@@ -345,6 +350,11 @@ export interface PickupRoute {
   driver_name?: string;
   driver_email?: string;
   driver_vehicle?: string;
+  drop_point?: DropPoint | null;
+  drop_point_name?: string;
+  drop_point_address?: string;
+  drop_point_latitude?: number;
+  drop_point_longitude?: number;
   submission?: WasteSubmission;
 }
 

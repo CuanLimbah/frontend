@@ -183,16 +183,19 @@ export interface CreateDriverPayload {
 export interface AssignPickupRoutePayload {
   submissionId: string;
   driverId: string;
+  dropPointId: string;
   scheduledAt?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
   notes?: string;
 }
 
 export interface UpdatePickupRouteStatusPayload {
   status: PickupRouteStatus;
   notes?: string;
+}
+
+export interface UpdateDriverLocationPayload {
+  latitude: number;
+  longitude: number;
 }
 
 export interface CreatePaymentPayload {
@@ -413,6 +416,21 @@ export const api = {
   ) {
     return request<PickupRoute>(
       `/driver/pickup-routes/${routeId}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+      token,
+    );
+  },
+
+  updateDriverLocation(
+    token: string,
+    routeId: string,
+    payload: UpdateDriverLocationPayload,
+  ) {
+    return request<PickupRoute>(
+      `/driver/pickup-routes/${routeId}/location`,
       {
         method: 'PATCH',
         body: JSON.stringify(payload),
