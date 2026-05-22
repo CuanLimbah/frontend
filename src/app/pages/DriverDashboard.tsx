@@ -79,6 +79,8 @@ export function DriverDashboard() {
   const [processingRouteId, setProcessingRouteId] = useState<string | null>(null);
   const [currentPosition, setCurrentPosition] = useState<DriverPosition | null>(null);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [isRequestingGps, setIsRequestingGps] = useState(false);
+  const [isTrackingEnabled, setIsTrackingEnabled] = useState(false);
   const lastLocationSyncRef = useRef(0);
   const activeRoute =
     dashboard?.routes.find((route) => activeRouteStatuses.includes(route.status)) ?? null;
@@ -127,7 +129,7 @@ export function DriverDashboard() {
   }, [accessToken, authLoading, logout, user?.role]);
 
   useEffect(() => {
-    if (!accessToken || !activeRoute) {
+    if (!accessToken || !activeRoute || !isTrackingEnabled) {
       return;
     }
 
@@ -179,7 +181,48 @@ export function DriverDashboard() {
       isCancelled = true;
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [accessToken, activeRoute?.id]);
+  }, [accessToken, activeRoute?.id, isTrackingEnabled]);
+
+  const handleRequestGpsAccess = () => {
+    if (!activeRoute) {
+      setGeoError('Belum ada rute aktif untuk dilacak.');
+      toast.error('Belum ada rute aktif untuk dilacak.');
+      return;
+    }
+
+    if (!('geolocation' in navigator)) {
+      setGeoError('Browser tidak mendukung GPS.');
+      toast.error('Browser tidak mendukung GPS.');
+      return;
+    }
+
+    setIsRequestingGps(true);
+    setGeoError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setCurrentPosition({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+        setIsTrackingEnabled(true);
+        setIsRequestingGps(false);
+        toast.success('Akses GPS aktif.');
+      },
+      (error) => {
+        setIsTrackingEnabled(false);
+        setIsRequestingGps(false);
+        setGeoError(error.message || 'Izin lokasi ditolak atau GPS tidak tersedia.');
+        toast.error('Akses GPS belum diberikan.');
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 15000,
+      },
+    );
+  };
 
   const refreshDashboard = async () => {
     if (!accessToken) {
@@ -280,6 +323,9 @@ export function DriverDashboard() {
           route={activeRoute}
           currentPosition={currentPosition}
           geoError={geoError}
+          isRequestingGps={isRequestingGps}
+          isTrackingEnabled={isTrackingEnabled}
+          onRequestGpsAccess={handleRequestGpsAccess}
         />
 
         <section className="p-6 rounded-xl bg-white/5 border border-white/10">
@@ -354,9 +400,19 @@ interface LiveTrackerPanelProps {
   route: PickupRoute | null;
   currentPosition: DriverPosition | null;
   geoError: string | null;
+  isRequestingGps: boolean;
+  isTrackingEnabled: boolean;
+  onRequestGpsAccess: () => void;
 }
 
-function LiveTrackerPanel({ route, currentPosition, geoError }: LiveTrackerPanelProps) {
+function LiveTrackerPanel({
+  route,
+  currentPosition,
+  geoError,
+  isRequestingGps,
+  isTrackingEnabled,
+  onRequestGpsAccess,
+}: LiveTrackerPanelProps) {
   const destination = getRouteDestination(route);
   const distanceKm =
     currentPosition && destination
@@ -401,7 +457,7 @@ function LiveTrackerPanel({ route, currentPosition, geoError }: LiveTrackerPanel
           </p>
         </div>
         <span className="px-3 py-1 rounded-full bg-green-500/10 text-green-400 text-sm">
-          {currentPosition ? 'GPS aktif' : 'Menunggu GPS'}
+          {currentPosition ? 'GPS aktif' : isTrackingEnabled ? 'Mengaktifkan GPS' : 'GPS belum diizinkan'}
         </span>
       </div>
 
@@ -413,6 +469,30 @@ function LiveTrackerPanel({ route, currentPosition, geoError }: LiveTrackerPanel
             emptyMessage="Aktifkan GPS dan pastikan rute sudah memiliki koordinat drop point."
             className="min-h-[320px]"
           />
+          {!currentPosition && (
+            <div className="absolute inset-4 flex items-center justify-center rounded-2xl bg-black/55 backdrop-blur-sm">
+              <div className="max-w-sm rounded-2xl border border-emerald-400/30 bg-slate-950/90 p-5 text-center shadow-[0_0_40px_rgba(34,197,94,0.18)]">
+                <Satellite className="mx-auto mb-3 h-8 w-8 text-emerald-400" />
+                <div className="mb-2 text-lg text-white">Aktifkan GPS Driver</div>
+                <p className="mb-4 text-sm text-gray-400">
+                  Klik tombol ini supaya browser meminta izin lokasi. Lokasi dipakai untuk live tracker ke drop point.
+                </p>
+                <button
+                  type="button"
+                  onClick={onRequestGpsAccess}
+                  disabled={!route || isRequestingGps}
+                  className="w-full rounded-xl bg-emerald-500 px-4 py-3 text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-gray-600"
+                >
+                  {isRequestingGps ? 'Meminta izin GPS...' : 'Izinkan Akses GPS'}
+                </button>
+                {!route && (
+                  <div className="mt-3 text-xs text-yellow-300">
+                    Tracker aktif setelah admin memberi rute ke driver.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-black/45 border border-white/10 p-4 backdrop-blur">
             <div className="text-sm text-gray-400">Estimasi jarak ke tujuan</div>
             <div className="text-3xl text-white">{formatDistance(distanceKm)}</div>
