@@ -44,6 +44,92 @@ function getCountRows(counts: Record<string, number> | undefined) {
     .sort((a, b) => b[1] - a[1]);
 }
 
+function getDefaultMultimodalRag(): NonNullable<
+  QualityAiAnalytics['multimodalRag']
+> {
+  return {
+    totalAiQualityChecks: 0,
+    usedCount: 0,
+    notUsedCount: 0,
+    usageRate: 0,
+    embeddingUnavailableCount: 0,
+    noSimilarCaseCount: 0,
+    similarCaseContextUsedCount: 0,
+    averageSimilarCaseCount: null,
+    averageTopSimilarityScore: null,
+    averageConfidenceWhenUsed: null,
+    averageConfidenceWhenNotUsed: null,
+    overrideRateWhenUsed: 0,
+    overrideRateWhenNotUsed: 0,
+    agreementRateWhenUsed: 0,
+    agreementRateWhenNotUsed: 0,
+    adminDecisionCountWhenUsed: 0,
+    adminDecisionCountWhenNotUsed: 0,
+    overrideCountWhenUsed: 0,
+    overrideCountWhenNotUsed: 0,
+    sourceUsage: {
+      similar_quality_cases: 0,
+      none: 0,
+      embedding_unavailable: 0,
+      unknown: 0,
+    },
+    byWasteType: {
+      oil: {
+        totalAiQualityChecks: 0,
+        usedCount: 0,
+        usageRate: 0,
+        averageTopSimilarityScore: null,
+        overrideRateWhenUsed: 0,
+        overrideRateWhenNotUsed: 0,
+      },
+      food: {
+        totalAiQualityChecks: 0,
+        usedCount: 0,
+        usageRate: 0,
+        averageTopSimilarityScore: null,
+        overrideRateWhenUsed: 0,
+        overrideRateWhenNotUsed: 0,
+      },
+    },
+  };
+}
+
+function getMultimodalInterpretations(
+  multimodal: NonNullable<QualityAiAnalytics['multimodalRag']>,
+) {
+  const messages: string[] = [];
+
+  if (multimodal.usageRate === 0) {
+    messages.push('Multimodal RAG belum digunakan pada data yang difilter.');
+  }
+  if (multimodal.embeddingUnavailableCount > 0) {
+    messages.push(
+      'Ada kasus embedding visual-text belum tersedia. Jalankan backfill embedding.',
+    );
+  }
+  if (multimodal.noSimilarCaseCount > 0) {
+    messages.push('Sebagian submission belum menemukan kasus historis mirip.');
+  }
+  if (
+    multimodal.adminDecisionCountWhenUsed > 0 &&
+    multimodal.adminDecisionCountWhenNotUsed > 0 &&
+    multimodal.overrideRateWhenUsed < multimodal.overrideRateWhenNotUsed
+  ) {
+    messages.push(
+      'Indikasi awal Multimodal RAG membantu menurunkan override rate.',
+    );
+  }
+  if (
+    multimodal.adminDecisionCountWhenUsed > 0 &&
+    multimodal.adminDecisionCountWhenNotUsed > 0 &&
+    multimodal.overrideRateWhenUsed > multimodal.overrideRateWhenNotUsed
+  ) {
+    messages.push('Perlu audit kualitas retrieval kasus historis.');
+  }
+
+  return messages;
+}
+
 function MetricCard({
   label,
   value,
@@ -159,6 +245,14 @@ export function AiQualityAnalyticsPanel({
   const aiErrorRows = useMemo(
     () => getCountRows(analytics?.aiErrorPatterns),
     [analytics],
+  );
+  const multimodalRag = useMemo(
+    () => analytics?.multimodalRag ?? getDefaultMultimodalRag(),
+    [analytics],
+  );
+  const multimodalInterpretations = useMemo(
+    () => getMultimodalInterpretations(multimodalRag),
+    [multimodalRag],
   );
 
   const handleApplyFilter = () => {
@@ -346,6 +440,163 @@ export function AiQualityAnalyticsPanel({
                   : undefined
               }
             />
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+            <div className="mb-4">
+              <h3 className="text-white mb-2">Multimodal RAG Performance</h3>
+              <p className="text-sm text-gray-400">
+                Pantau penggunaan embedding visual-text, kasus historis mirip,
+                dan perbandingan keputusan admin saat konteks historis tersedia.
+              </p>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <MetricCard
+                label="Usage Rate"
+                value={formatPercent(multimodalRag.usageRate)}
+                tone="blue"
+              />
+              <MetricCard
+                label="Used Count"
+                value={formatNumber(multimodalRag.usedCount)}
+                tone="green"
+              />
+              <MetricCard
+                label="Embedding Unavailable"
+                value={formatNumber(multimodalRag.embeddingUnavailableCount)}
+                tone={
+                  multimodalRag.embeddingUnavailableCount > 0 ? 'yellow' : 'gray'
+                }
+              />
+              <MetricCard
+                label="No Similar Case Found"
+                value={formatNumber(multimodalRag.noSimilarCaseCount)}
+                tone={multimodalRag.noSimilarCaseCount > 0 ? 'yellow' : 'gray'}
+              />
+              <MetricCard
+                label="Avg Top Similarity"
+                value={formatPercent(multimodalRag.averageTopSimilarityScore)}
+                tone="purple"
+              />
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <MetricCard
+                label="Avg Similar Case Count"
+                value={formatNumber(multimodalRag.averageSimilarCaseCount)}
+                tone="gray"
+              />
+              <MetricCard
+                label="Override Rate With RAG"
+                value={formatPercent(multimodalRag.overrideRateWhenUsed)}
+                tone="blue"
+              />
+              <MetricCard
+                label="Override Rate Without RAG"
+                value={formatPercent(multimodalRag.overrideRateWhenNotUsed)}
+                tone="yellow"
+              />
+              <MetricCard
+                label="Agreement With RAG"
+                value={formatPercent(multimodalRag.agreementRateWhenUsed)}
+                tone="green"
+              />
+              <MetricCard
+                label="Agreement Without RAG"
+                value={formatPercent(multimodalRag.agreementRateWhenNotUsed)}
+                tone="gray"
+              />
+            </div>
+
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <UsageBox
+                title="Source Usage Multimodal RAG"
+                rows={[
+                  {
+                    label: 'Similar Quality Cases',
+                    value: multimodalRag.sourceUsage.similar_quality_cases,
+                  },
+                  { label: 'None / No Similar Case', value: multimodalRag.sourceUsage.none },
+                  {
+                    label: 'Embedding Unavailable',
+                    value: multimodalRag.sourceUsage.embedding_unavailable,
+                  },
+                  { label: 'Unknown', value: multimodalRag.sourceUsage.unknown },
+                ]}
+              />
+              <div className="rounded-lg border border-white/10 bg-white/5 p-4">
+                <h4 className="text-white mb-4">Interpretasi</h4>
+                {multimodalInterpretations.length === 0 ? (
+                  <p className="text-sm text-gray-400">
+                    Belum ada sinyal risiko dominan pada Multimodal RAG.
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {multimodalInterpretations.map((message) => (
+                      <div
+                        key={message}
+                        className="flex gap-2 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3 text-sm text-yellow-100"
+                      >
+                        <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                        <p>{message}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10 text-left text-gray-400">
+                    <th className="py-3 pr-4">Jenis Limbah</th>
+                    <th className="py-3 pr-4">Total AI Checks</th>
+                    <th className="py-3 pr-4">Multimodal Used</th>
+                    <th className="py-3 pr-4">Usage Rate</th>
+                    <th className="py-3 pr-4">Avg Top Similarity</th>
+                    <th className="py-3 pr-4">Override Rate Used</th>
+                    <th className="py-3">Override Rate Not Used</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(['oil', 'food'] as WasteType[]).map((type) => (
+                    <tr key={type} className="border-b border-white/5 text-gray-200">
+                      <td className="py-3 pr-4 text-white">
+                        {getWasteTypeLabel(type)}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {formatNumber(
+                          multimodalRag.byWasteType[type].totalAiQualityChecks,
+                        )}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {formatNumber(multimodalRag.byWasteType[type].usedCount)}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {formatPercent(multimodalRag.byWasteType[type].usageRate)}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {formatPercent(
+                          multimodalRag.byWasteType[type].averageTopSimilarityScore,
+                        )}
+                      </td>
+                      <td className="py-3 pr-4">
+                        {formatPercent(
+                          multimodalRag.byWasteType[type].overrideRateWhenUsed,
+                        )}
+                      </td>
+                      <td className="py-3">
+                        {formatPercent(
+                          multimodalRag.byWasteType[type].overrideRateWhenNotUsed,
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-2">
