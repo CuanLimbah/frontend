@@ -18,6 +18,13 @@ type WasteTypeFilter = WasteType | 'all';
 
 const grades: QualityGrade[] = ['A', 'B', 'C'];
 const overrideTransitions = ['A->B', 'A->C', 'B->A', 'B->C', 'C->A', 'C->B'];
+const thresholdBuckets = [
+  '0.00-0.59',
+  '0.60-0.69',
+  '0.70-0.79',
+  '0.80-0.89',
+  '0.90-1.00',
+];
 
 function formatPercent(value: number | null | undefined) {
   return value == null ? 'Belum tersedia' : `${Math.round(value * 100)}%`;
@@ -98,6 +105,32 @@ function getDefaultMultimodalRag(): NonNullable<
         overrideRateWhenNotUsed: 0,
       },
     },
+  };
+}
+
+function getDefaultRetrievalQuality(): NonNullable<
+  NonNullable<QualityAiAnalytics['multimodalRag']>['retrievalQuality']
+> {
+  return {
+    totalRetrievals: 0,
+    supabaseRetrievals: 0,
+    applicationFallbackRetrievals: 0,
+    noResultRetrievals: 0,
+    embeddingUnavailableRetrievals: 0,
+    averageTopSimilarity: null,
+    averageSimilarCaseCount: null,
+    lowSimilarityCount: 0,
+    lowSimilarityRate: 0,
+    highSimilarityCount: 0,
+    highSimilarityRate: 0,
+    byThresholdBucket: {},
+    byProvider: {},
+    currentConfig: {
+      topK: 5,
+      minSimilarity: 0.72,
+      provider: 'supabase_pgvector',
+    },
+    recommendation: 'Retrieval quality tuning belum tersedia.',
   };
 }
 
@@ -266,6 +299,10 @@ export function AiQualityAnalyticsPanel({
   const multimodalRag = useMemo(
     () => analytics?.multimodalRag ?? getDefaultMultimodalRag(),
     [analytics],
+  );
+  const retrievalQuality = useMemo(
+    () => multimodalRag.retrievalQuality ?? getDefaultRetrievalQuality(),
+    [multimodalRag],
   );
   const multimodalInterpretations = useMemo(
     () => getMultimodalInterpretations(multimodalRag),
@@ -591,6 +628,118 @@ export function AiQualityAnalyticsPanel({
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="mt-5 rounded-lg border border-white/10 bg-white/5 p-4">
+              <h4 className="text-white mb-2">Retrieval Quality Tuning</h4>
+              <p className="text-sm text-gray-400 mb-4">
+                Evaluasi kualitas retrieval untuk menentukan threshold dan topK
+                yang paling stabil.
+              </p>
+
+              {multimodalRag.retrievalQuality ? (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <MetricCard
+                      label="Total Retrievals"
+                      value={formatNumber(retrievalQuality.totalRetrievals)}
+                      tone="gray"
+                    />
+                    <MetricCard
+                      label="Supabase Retrievals"
+                      value={formatNumber(retrievalQuality.supabaseRetrievals)}
+                      tone="green"
+                    />
+                    <MetricCard
+                      label="Application Fallback"
+                      value={formatNumber(
+                        retrievalQuality.applicationFallbackRetrievals,
+                      )}
+                      tone="yellow"
+                    />
+                    <MetricCard
+                      label="No Result Retrievals"
+                      value={formatNumber(retrievalQuality.noResultRetrievals)}
+                      tone="yellow"
+                    />
+                    <MetricCard
+                      label="Embedding Unavailable"
+                      value={formatNumber(
+                        retrievalQuality.embeddingUnavailableRetrievals,
+                      )}
+                      tone="red"
+                    />
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <MetricCard
+                      label="Avg Top Similarity"
+                      value={formatPercent(retrievalQuality.averageTopSimilarity)}
+                      tone="purple"
+                    />
+                    <MetricCard
+                      label="Avg Similar Case Count"
+                      value={formatNumber(
+                        retrievalQuality.averageSimilarCaseCount,
+                      )}
+                      tone="gray"
+                    />
+                    <MetricCard
+                      label="Low Similarity Rate"
+                      value={formatPercent(retrievalQuality.lowSimilarityRate)}
+                      tone="yellow"
+                    />
+                    <MetricCard
+                      label="High Similarity Rate"
+                      value={formatPercent(retrievalQuality.highSimilarityRate)}
+                      tone="green"
+                    />
+                    <MetricCard
+                      label="Current topK"
+                      value={formatNumber(retrievalQuality.currentConfig.topK)}
+                      tone="blue"
+                    />
+                  </div>
+
+                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                    <div className="rounded-lg border border-white/10 p-4">
+                      <h5 className="text-white mb-3">Threshold Buckets</h5>
+                      <div className="space-y-3">
+                        {thresholdBuckets.map((bucket) => (
+                          <div
+                            key={bucket}
+                            className="flex items-center justify-between gap-3 text-sm"
+                          >
+                            <span className="text-gray-400">{bucket}</span>
+                            <span className="text-white">
+                              {formatNumber(
+                                retrievalQuality.byThresholdBucket[bucket],
+                              )}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
+                      <h5 className="text-green-100 mb-3">Rekomendasi</h5>
+                      <div className="space-y-2 text-sm text-green-50">
+                        <p>
+                          Current minSimilarity:{' '}
+                          {formatPercent(
+                            retrievalQuality.currentConfig.minSimilarity,
+                          )}
+                        </p>
+                        <p>Provider: {retrievalQuality.currentConfig.provider}</p>
+                        <p>{retrievalQuality.recommendation}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-400">
+                  Retrieval quality tuning belum tersedia.
+                </p>
+              )}
             </div>
 
             <div className="mt-5 overflow-x-auto">
