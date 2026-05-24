@@ -1,7 +1,8 @@
 import { Link, useNavigate } from 'react-router';
-import { Leaf, LogOut, LayoutDashboard, User, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, User, Menu, X } from 'lucide-react';
 import { useAuth } from '../providers/AuthProvider';
 import { useState } from 'react';
+import cuanLimbahIcon from '../../imports/icon.png';
 
 export function Navigation() {
   const navigate = useNavigate();
@@ -33,8 +34,12 @@ export function Navigation() {
 
               {/* Logo */}
               <Link to="/" onClick={close} className="flex items-center gap-2 group shrink-0">
-                <div className="bg-green-500/10 p-2 rounded-lg group-hover:bg-green-500/20 transition-colors">
-                  <Leaf className="w-5 h-5 text-green-500" />
+                <div className="bg-green-500/10 p-1.5 rounded-lg group-hover:bg-green-500/20 transition-colors">
+                  <img
+                    src={cuanLimbahIcon}
+                    alt="CuanLimbah"
+                    className="h-6 w-6 rounded-md object-contain"
+                  />
                 </div>
                 <span className="text-lg font-semibold text-white">CuanLimbah</span>
               </Link>

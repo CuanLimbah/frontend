@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
-import { Mail, Lock, Eye, EyeOff, Leaf, ArrowRight, User, Building } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, User, Building } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { getErrorMessage, getGoogleAuthStartUrl } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
+import cuanLimbahIcon from '../../imports/icon.png';
 
 export function Register() {
   const navigate = useNavigate();
@@ -89,8 +90,12 @@ export function Register() {
       >
         {/* Logo & Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500/20 border border-green-500/30 mb-4">
-            <Leaf className="w-8 h-8 text-green-500" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-500/20 border border-green-500/30 mb-4 p-2">
+            <img
+              src={cuanLimbahIcon}
+              alt="CuanLimbah"
+              className="h-full w-full rounded-xl object-contain"
+            />
           </div>
           <h1 className="text-3xl font-bold text-white mb-2">
             Mulai Dengan CuanLimbah
