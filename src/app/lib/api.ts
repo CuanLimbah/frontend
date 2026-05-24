@@ -2,6 +2,7 @@ import type {
   AdminDashboardData,
   AuthResponse,
   DriverDashboardData,
+  FinalAiEvaluationReport,
   PaymentMethod,
   PaymentRecord,
   PickupRoute,
@@ -307,6 +308,21 @@ export const api = {
     const query = searchParams.toString();
     return request<QualityAiAnalytics>(
       `/admin/analytics/quality-ai${query ? `?${query}` : ''}`,
+      {},
+      token,
+    );
+  },
+
+  getFinalAiEvaluationReport(token: string, params?: QualityAiAnalyticsParams) {
+    const searchParams = new URLSearchParams();
+
+    if (params?.startDate) searchParams.set('startDate', params.startDate);
+    if (params?.endDate) searchParams.set('endDate', params.endDate);
+    if (params?.wasteType) searchParams.set('wasteType', params.wasteType);
+
+    const query = searchParams.toString();
+    return request<FinalAiEvaluationReport>(
+      `/admin/analytics/ai-final-report${query ? `?${query}` : ''}`,
       {},
       token,
     );
