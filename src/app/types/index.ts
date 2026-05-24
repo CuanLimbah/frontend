@@ -110,6 +110,7 @@ export interface WasteSubmission {
   ai_visual_checked_at?: string;
   ai_visual_model?: string;
   ai_visual_source?: 'vision_llm' | 'fallback';
+  ai_multimodal_rag_provider?: string;
   quality_grade_source?: QualityGradeSource;
   admin_quality_notes?: string;
   quality_feedback?: QualityFeedback;
@@ -132,6 +133,38 @@ export interface QualityCheckResult {
   modelVersion: string;
   ragSource: 'rag' | 'fallback_sop';
   visualObservation?: AiVisualObservations;
+}
+
+export type QualitySimilarCaseProvider =
+  | 'supabase_pgvector'
+  | 'application_cosine'
+  | 'fallback_none'
+  | 'embedding_unavailable';
+
+export type QualitySimilarCaseSearchProvider =
+  | 'auto'
+  | 'supabase_pgvector'
+  | 'application_cosine';
+
+export interface QualitySimilarCase {
+  submission_id: string;
+  waste_type: WasteType;
+  image_url?: string;
+  final_quality_grade?: QualityGrade;
+  ai_quality_grade?: QualityGrade;
+  ai_quality_confidence?: number;
+  visual_observation_text?: string;
+  quality_feedback?: QualityFeedback;
+  override_primary_reason?: QualityFeedbackTag;
+  ai_error_pattern?: string;
+  similarity: number;
+  created_at: string;
+}
+
+export interface QualitySimilarCaseSearchResult {
+  provider: QualitySimilarCaseProvider;
+  fallbackUsed: boolean;
+  cases: QualitySimilarCase[];
 }
 
 export interface QualityAiAnalytics {
@@ -187,6 +220,43 @@ export interface QualityAiAnalytics {
       embedding_unavailable: number;
       unknown: number;
     };
+    providerUsage?: {
+      application_cosine: number;
+      supabase_pgvector: number;
+      fallback_none: number;
+      embedding_unavailable: number;
+      unknown: number;
+    };
+    retrievalQuality?: {
+      totalRetrievals: number;
+      supabaseRetrievals: number;
+      applicationFallbackRetrievals: number;
+      noResultRetrievals: number;
+      embeddingUnavailableRetrievals: number;
+      averageTopSimilarity: number | null;
+      averageSimilarCaseCount: number | null;
+      lowSimilarityCount: number;
+      lowSimilarityRate: number;
+      highSimilarityCount: number;
+      highSimilarityRate: number;
+      byThresholdBucket: Record<string, number>;
+      byProvider: Record<
+        string,
+        {
+          totalRetrievals: number;
+          averageTopSimilarity: number | null;
+          averageSimilarCaseCount: number | null;
+          overrideRate: number;
+          agreementRate: number;
+        }
+      >;
+      currentConfig: {
+        topK: number;
+        minSimilarity: number;
+        provider: string;
+      };
+      recommendation: string;
+    };
     byWasteType: Record<
       WasteType,
       {
@@ -215,6 +285,66 @@ export interface QualityAiAnalytics {
     ai_quality_confidence?: number;
     admin_quality_notes?: string;
     created_at: string;
+  }>;
+}
+
+export interface FinalAiEvaluationReport {
+  generatedAt: string;
+  filters: {
+    startDate?: string;
+    endDate?: string;
+    wasteType?: WasteType;
+  };
+  summary: {
+    totalAiQualityChecks: number;
+    totalAdminDecisions: number;
+    agreementRate: number;
+    overrideRate: number;
+    averageConfidence: number | null;
+    readinessStatus: 'ready' | 'partially_ready' | 'not_ready';
+  };
+  vision: {
+    visionLlmCount: number;
+    fallbackCount: number;
+    visionUsageRate: number;
+  };
+  sopRag: {
+    ragCount: number;
+    fallbackSopCount: number;
+    ragUsageRate: number;
+  };
+  multimodalRag: {
+    usedCount: number;
+    usageRate: number;
+    providerUsage: {
+      supabase_pgvector: number;
+      application_cosine: number;
+      fallback_none: number;
+      embedding_unavailable: number;
+      unknown: number;
+    };
+    averageTopSimilarity: number | null;
+    averageSimilarCaseCount: number | null;
+    noResultRetrievals: number;
+    embeddingUnavailableRetrievals: number;
+  };
+  dataset: {
+    totalEligibleCases: number;
+    embeddingCoverageRate: number;
+    supabaseVectorSyncCoverageRate: number;
+  };
+  qualityOutcomes: {
+    gradeDistributionAi: Record<QualityGrade, number>;
+    gradeDistributionAdmin: Record<QualityGrade, number>;
+    mostCommonOverrideReasons: Record<string, number>;
+    mostCommonAiErrorPatterns: Record<string, number>;
+  };
+  recommendations: string[];
+  risks: string[];
+  demoReadinessChecklist: Array<{
+    label: string;
+    status: 'pass' | 'warning' | 'fail';
+    detail: string;
   }>;
 }
 

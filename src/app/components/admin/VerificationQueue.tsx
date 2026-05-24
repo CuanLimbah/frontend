@@ -13,8 +13,10 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/api';
+import { AiSimilarCasesPanel } from './AiSimilarCasesPanel';
 
 interface VerificationQueueProps {
+  accessToken: string;
   submissions: WasteSubmission[];
   prices?: WastePrice[];
   onApprove: (
@@ -92,6 +94,7 @@ function formatRupiah(value: number) {
 }
 
 export function VerificationQueue({
+  accessToken,
   submissions,
   prices = [],
   onApprove,
@@ -649,6 +652,10 @@ export function VerificationQueue({
                             {getRagSourceLabel(getQualityResult(submission)!.ragSource)}
                           </span>
                         </div>
+                        <AiSimilarCasesPanel
+                          accessToken={accessToken}
+                          submissionId={submission.id}
+                        />
                         <p className="text-yellow-200 leading-relaxed">
                           AI hanya memberi rekomendasi. Admin tetap menentukan grade
                           final.

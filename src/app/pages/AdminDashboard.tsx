@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings, Truck, Brain } from 'lucide-react';
+import { Users, TrendingUp, Package, DollarSign, CheckSquare, Settings, Truck, Brain, FileText } from 'lucide-react';
 import { Navigate } from 'react-router';
 import { VerificationQueue } from '../components/admin/VerificationQueue';
 import { PriceCatalog } from '../components/admin/PriceCatalog';
@@ -8,6 +8,7 @@ import { WithdrawalPanel } from '../components/admin/WithdrawalPanel';
 import { AnalyticsDashboard } from '../components/admin/AnalyticsDashboard';
 import { DriverOperations } from '../components/admin/DriverOperations';
 import { AiQualityAnalyticsPanel } from '../components/admin/AiQualityAnalyticsPanel';
+import { FinalAiEvaluationReportPanel } from '../components/admin/FinalAiEvaluationReportPanel';
 import { motion } from 'motion/react';
 import {
   api,
@@ -28,7 +29,7 @@ import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function AdminDashboard() {
   const { user, accessToken, isLoading: authLoading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'drivers' | 'withdrawals' | 'analytics' | 'aiAnalytics'>('verification');
+  const [activeTab, setActiveTab] = useState<'verification' | 'prices' | 'users' | 'drivers' | 'withdrawals' | 'analytics' | 'aiAnalytics' | 'aiReport'>('verification');
   const [dashboard, setDashboard] = useState<AdminDashboardData | null>(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export function AdminDashboard() {
     { id: 'withdrawals' as const, label: 'Penarikan Dana', icon: DollarSign },
     { id: 'analytics' as const, label: 'Analytics', icon: TrendingUp },
     { id: 'aiAnalytics' as const, label: 'AI Analytics', icon: Brain },
+    { id: 'aiReport' as const, label: 'AI Report', icon: FileText },
   ];
 
   useEffect(() => {
@@ -340,6 +342,7 @@ export function AdminDashboard() {
         >
           {activeTab === 'verification' && (
             <VerificationQueue
+              accessToken={accessToken}
               submissions={dashboard.pending_submissions}
               prices={dashboard.prices}
               onApprove={handleApproveSubmission}
@@ -373,6 +376,9 @@ export function AdminDashboard() {
           {activeTab === 'analytics' && <AnalyticsDashboard stats={dashboard.stats} />}
           {activeTab === 'aiAnalytics' && accessToken && (
             <AiQualityAnalyticsPanel accessToken={accessToken} />
+          )}
+          {activeTab === 'aiReport' && accessToken && (
+            <FinalAiEvaluationReportPanel accessToken={accessToken} />
           )}
         </motion.div>
       </div>
