@@ -1,42 +1,37 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Wallet, Upload, TrendingUp, MapPin, Clock, FileText, CreditCard } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Wallet, Upload, TrendingUp, MapPin, Clock, FileText } from 'lucide-react';
 import { Navigate } from 'react-router';
 import { WasteSubmissionForm } from '../components/user/WasteSubmissionForm';
 import { WalletCard } from '../components/user/WalletCard';
 import { StatusTracker } from '../components/user/StatusTracker';
 import { DropPointList } from '../components/user/DropPointList';
 import { TransactionHistory } from '../components/user/TransactionHistory';
-import { PaymentGatewayPanel } from '../components/user/PaymentGatewayPanel';
 import { motion } from 'motion/react';
 import {
   api,
   ApiError,
-  type CreatePaymentPayload,
   type CreateSubmissionPayload,
   type CreateWithdrawalPayload,
   getErrorMessage,
 } from '../lib/api';
 import { useAuth } from '../providers/AuthProvider';
-import type { PaymentRecord, UserDashboardData } from '../types';
+import type { UserDashboardData } from '../types';
 import { PageErrorState, PageLoader } from '../components/common/PageState';
 
 export function UserDashboard() {
   const { user, accessToken, isLoading: authLoading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'submit' | 'wallet' | 'status' | 'droppoints' | 'payments' | 'history'>('submit');
+  const [activeTab, setActiveTab] = useState<'submit' | 'wallet' | 'status' | 'droppoints' | 'history'>('submit');
   const [dashboard, setDashboard] = useState<UserDashboardData | null>(null);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmittingWaste, setIsSubmittingWaste] = useState(false);
   const [isSubmittingWithdrawal, setIsSubmittingWithdrawal] = useState(false);
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
-  const [payments, setPayments] = useState<PaymentRecord[]>([]);
 
   const tabs = [
     { id: 'submit' as const, label: 'Setor Limbah', icon: Upload },
     { id: 'wallet' as const, label: 'Wallet', icon: Wallet },
     { id: 'status' as const, label: 'Status Setoran', icon: Clock },
     { id: 'droppoints' as const, label: 'Drop Point', icon: MapPin },
-    { id: 'payments' as const, label: 'Payment', icon: CreditCard },
     { id: 'history' as const, label: 'Riwayat', icon: FileText },
   ];
 
@@ -121,31 +116,6 @@ export function UserDashboard() {
       setActiveTab('history');
     } finally {
       setIsSubmittingWithdrawal(false);
-    }
-  };
-
-  const refreshPayments = useCallback(async () => {
-    if (!accessToken) {
-      return;
-    }
-
-    const response = await api.getMyPayments(accessToken);
-    setPayments(response);
-  }, [accessToken]);
-
-  const handleCreatePayment = async (payload: CreatePaymentPayload) => {
-    if (!accessToken) {
-      throw new Error('Sesi login tidak ditemukan.');
-    }
-
-    setIsSubmittingPayment(true);
-
-    try {
-      const payment = await api.createPayment(accessToken, payload);
-      await refreshPayments();
-      return payment;
-    } finally {
-      setIsSubmittingPayment(false);
     }
   };
 
@@ -290,14 +260,6 @@ export function UserDashboard() {
           )}
           {activeTab === 'status' && <StatusTracker submissions={dashboard.submissions} />}
           {activeTab === 'droppoints' && <DropPointList dropPoints={dashboard.drop_points} />}
-          {activeTab === 'payments' && (
-            <PaymentGatewayPanel
-              payments={payments}
-              isSubmitting={isSubmittingPayment}
-              onCreatePayment={handleCreatePayment}
-              onRefresh={refreshPayments}
-            />
-          )}
           {activeTab === 'history' && (
             <TransactionHistory transactions={dashboard.transactions} />
           )}
