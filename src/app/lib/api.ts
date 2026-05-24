@@ -143,6 +143,7 @@ export interface RegisterPayload {
 export interface CreateSubmissionPayload {
   wasteType: WasteType;
   estimatedWeight: number;
+  dropPointId?: string;
   imageUrl?: string;
 }
 

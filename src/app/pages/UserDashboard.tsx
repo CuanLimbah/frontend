@@ -276,6 +276,7 @@ export function UserDashboard() {
           {activeTab === 'submit' && (
             <WasteSubmissionForm
               prices={dashboard.waste_prices}
+              dropPoints={dashboard.drop_points}
               isSubmitting={isSubmittingWaste}
               onSubmit={handleCreateSubmission}
             />

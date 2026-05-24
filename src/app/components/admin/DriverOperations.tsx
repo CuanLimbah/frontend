@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CalendarClock, Plus, Route, Truck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DropPoint, PaymentRecord, PickupRoute, User, WasteSubmission } from '../../types';
@@ -46,6 +46,21 @@ export function DriverOperations({
   const [isCreatingDriver, setIsCreatingDriver] = useState(false);
   const [isAssigningRoute, setIsAssigningRoute] = useState(false);
   const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
+  const selectedSubmission = pendingSubmissions.find(
+    (submission) => submission.id === routeForm.submissionId,
+  );
+
+  useEffect(() => {
+    const preferredDropPointId = selectedSubmission?.drop_point_id;
+
+    if (
+      preferredDropPointId &&
+      dropPoints.some((dropPoint) => dropPoint.id === preferredDropPointId) &&
+      routeForm.dropPointId !== preferredDropPointId
+    ) {
+      setRouteForm((current) => ({ ...current, dropPointId: preferredDropPointId }));
+    }
+  }, [dropPoints, routeForm.dropPointId, selectedSubmission?.drop_point_id]);
 
   const handleCreateDriver = async () => {
     try {
@@ -200,9 +215,22 @@ export function DriverOperations({
           <div className="space-y-3">
             <select
               value={routeForm.submissionId}
-              onChange={(event) =>
-                setRouteForm((current) => ({ ...current, submissionId: event.target.value }))
-              }
+              onChange={(event) => {
+                const nextSubmission = pendingSubmissions.find(
+                  (submission) => submission.id === event.target.value,
+                );
+                const preferredDropPointId = nextSubmission?.drop_point_id;
+
+                setRouteForm((current) => ({
+                  ...current,
+                  submissionId: event.target.value,
+                  dropPointId:
+                    preferredDropPointId &&
+                    dropPoints.some((dropPoint) => dropPoint.id === preferredDropPointId)
+                      ? preferredDropPointId
+                      : current.dropPointId,
+                }));
+              }}
               className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
             >
               <option value="" className="bg-[#0a0a0f] text-white">
@@ -211,6 +239,7 @@ export function DriverOperations({
               {pendingSubmissions.map((submission) => (
                 <option key={submission.id} value={submission.id} className="bg-[#0a0a0f] text-white">
                   {submission.id} - {submission.waste_type} - {submission.estimated_weight} KG
+                  {submission.drop_point_name ? ` - ${submission.drop_point_name}` : ''}
                 </option>
               ))}
             </select>

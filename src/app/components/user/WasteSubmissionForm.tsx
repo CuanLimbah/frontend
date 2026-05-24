@@ -1,30 +1,115 @@
 import { useState } from 'react';
-import { Upload, Camera, Package, CheckCircle } from 'lucide-react';
-import type { WastePrice, WasteType } from '../../types';
+import { Upload, Camera, Package, CheckCircle, Crosshair, MapPin } from 'lucide-react';
+import type { DropPoint, WastePrice, WasteType } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getErrorMessage, type CreateSubmissionPayload } from '../../lib/api';
+import { EmbeddedMap, type MapPoint } from '../common/EmbeddedMap';
 
 interface WasteSubmissionFormProps {
   prices: WastePrice[];
+  dropPoints: DropPoint[];
   isSubmitting?: boolean;
   onSubmit: (payload: CreateSubmissionPayload) => Promise<void>;
 }
 
+type UserLocation = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+};
+
+type DropPointDistance = DropPoint & {
+  distanceKm?: number;
+};
+
+function hasValidCoordinates(point: DropPoint) {
+  return Number.isFinite(point.latitude) && Number.isFinite(point.longitude);
+}
+
+function calculateDistanceKm(
+  from: Pick<UserLocation, 'latitude' | 'longitude'>,
+  to: Pick<DropPoint, 'latitude' | 'longitude'>,
+) {
+  const earthRadiusKm = 6371;
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const deltaLatitude = toRadians(to.latitude - from.latitude);
+  const deltaLongitude = toRadians(to.longitude - from.longitude);
+  const fromLatitude = toRadians(from.latitude);
+  const toLatitude = toRadians(to.latitude);
+  const haversine =
+    Math.sin(deltaLatitude / 2) ** 2 +
+    Math.cos(fromLatitude) * Math.cos(toLatitude) * Math.sin(deltaLongitude / 2) ** 2;
+
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+}
+
+function getDropPointsWithDistance(
+  dropPoints: DropPoint[],
+  userLocation: UserLocation | null,
+): DropPointDistance[] {
+  return dropPoints
+    .map((point) => ({
+      ...point,
+      distanceKm:
+        userLocation && hasValidCoordinates(point)
+          ? calculateDistanceKm(userLocation, point)
+          : undefined,
+    }))
+    .sort((first, second) => {
+      if (first.distanceKm == null && second.distanceKm == null) return 0;
+      if (first.distanceKm == null) return 1;
+      if (second.distanceKm == null) return -1;
+      return first.distanceKm - second.distanceKm;
+    });
+}
+
 export function WasteSubmissionForm({
   prices,
+  dropPoints,
   isSubmitting = false,
   onSubmit,
 }: WasteSubmissionFormProps) {
   const [step, setStep] = useState(1);
   const [wasteType, setWasteType] = useState<WasteType | ''>('');
   const [weight, setWeight] = useState('');
+  const [selectedDropPointId, setSelectedDropPointId] = useState('');
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locationError, setLocationError] = useState('');
+  const [isLocating, setIsLocating] = useState(false);
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
 
   const wasteTypes: Array<{ value: WasteType; label: string; icon: string }> = [
-    { value: 'food', label: 'Sampah Sisa Makanan', icon: '🍱' },
-    { value: 'oil', label: 'Minyak Jelantah', icon: '🛢️' },
+    { value: 'food', label: 'Sampah Sisa Makanan', icon: 'Food' },
+    { value: 'oil', label: 'Minyak Jelantah', icon: 'Oil' },
+  ];
+
+  const dropPointsWithDistance = getDropPointsWithDistance(dropPoints, userLocation);
+  const selectedDropPoint = dropPoints.find((point) => point.id === selectedDropPointId);
+  const mapPoints: MapPoint[] = [
+    ...(userLocation
+      ? [
+          {
+            id: 'current-location',
+            label: 'Lokasi Anda',
+            address: userLocation.accuracy
+              ? `Akurasi ${Math.round(userLocation.accuracy)} m`
+              : 'Lokasi dari GPS browser',
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+            tone: 'driver' as const,
+          },
+        ]
+      : []),
+    ...dropPoints.filter(hasValidCoordinates).map((point) => ({
+      id: point.id,
+      label: point.name,
+      address: point.address,
+      latitude: point.latitude,
+      longitude: point.longitude,
+      tone: point.id === selectedDropPointId ? 'selected' as const : 'dropPoint' as const,
+    })),
   ];
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,8 +124,48 @@ export function WasteSubmissionForm({
     }
   };
 
+  const requestUserLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationError('Browser tidak mendukung akses GPS.');
+      return;
+    }
+
+    setIsLocating(true);
+    setLocationError('');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const nextLocation = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+        const nearestDropPoint = getDropPointsWithDistance(dropPoints, nextLocation)[0];
+
+        setUserLocation(nextLocation);
+        if (nearestDropPoint && !selectedDropPointId) {
+          setSelectedDropPointId(nearestDropPoint.id);
+        }
+        setIsLocating(false);
+      },
+      (error) => {
+        setLocationError(
+          error.code === error.PERMISSION_DENIED
+            ? 'Akses lokasi ditolak. Izinkan GPS di browser untuk rekomendasi terdekat.'
+            : 'Gagal mengambil lokasi. Coba lagi atau pilih drop point manual.',
+        );
+        setIsLocating(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 60000,
+      },
+    );
+  };
+
   const handleSubmit = async () => {
-    if (!wasteType || !weight || !imagePreview) {
+    if (!wasteType || !weight || !imagePreview || (dropPoints.length > 0 && !selectedDropPointId)) {
       return;
     }
 
@@ -48,6 +173,7 @@ export function WasteSubmissionForm({
       await onSubmit({
         wasteType,
         estimatedWeight: Number(weight),
+        dropPointId: selectedDropPointId || undefined,
         imageUrl: imagePreview,
       });
 
@@ -55,6 +181,7 @@ export function WasteSubmissionForm({
       setStep(1);
       setWasteType('');
       setWeight('');
+      setSelectedDropPointId('');
       setImage(null);
       setImagePreview('');
     } catch (error) {
@@ -68,11 +195,10 @@ export function WasteSubmissionForm({
   const estimatedEarnings = currentPrice && weight ? currentPrice * parseFloat(weight) : 0;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="p-4 sm:p-8 rounded-xl bg-gradient-to-b from-white/10 to-white/5 border border-white/10">
-        {/* Progress Steps */}
         <div className="flex items-center justify-between mb-8">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div key={s} className="flex items-center flex-1">
               <div
                 className={`
@@ -82,7 +208,7 @@ export function WasteSubmissionForm({
               >
                 {step > s ? <CheckCircle className="w-5 h-5" /> : s}
               </div>
-              {s < 3 && (
+              {s < 4 && (
                 <div
                   className={`
                     flex-1 h-1 mx-2 transition-all
@@ -95,7 +221,6 @@ export function WasteSubmissionForm({
         </div>
 
         <AnimatePresence mode="wait">
-          {/* Step 1: Select Waste Type */}
           {step === 1 && (
             <motion.div
               key="step1"
@@ -121,7 +246,9 @@ export function WasteSubmissionForm({
                         }
                       `}
                     >
-                      <div className="text-5xl">{type.icon}</div>
+                      <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-sm text-gray-300">
+                        {type.icon}
+                      </div>
                       <div className="flex-1">
                         <div className="text-lg text-white mb-1">{type.label}</div>
                         <div className="text-green-500 text-xl">
@@ -143,7 +270,6 @@ export function WasteSubmissionForm({
             </motion.div>
           )}
 
-          {/* Step 2: Input Weight */}
           {step === 2 && (
             <motion.div
               key="step2"
@@ -199,10 +325,122 @@ export function WasteSubmissionForm({
             </motion.div>
           )}
 
-          {/* Step 3: Upload Image */}
           {step === 3 && (
             <motion.div
               key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-2xl text-white mb-2">Pilih Drop Point Terdekat</h2>
+                  <p className="text-gray-400">
+                    Gunakan GPS dari rumah Anda, lalu pilih drop point yang paling dekat.
+                  </p>
+                </div>
+                <button
+                  onClick={requestUserLocation}
+                  disabled={isLocating}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-500/10 border border-green-500/30 px-4 py-2 text-sm text-green-300 hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Crosshair className="w-4 h-4" />
+                  {isLocating ? 'Mengambil GPS...' : 'Gunakan Lokasi Saya'}
+                </button>
+              </div>
+
+              {locationError && (
+                <div className="mb-4 rounded-lg border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-200">
+                  {locationError}
+                </div>
+              )}
+
+              <div className="grid lg:grid-cols-[1.35fr_1fr] gap-4 mb-6">
+                <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+                  <EmbeddedMap
+                    points={mapPoints}
+                    emptyMessage="Belum ada drop point dengan koordinat."
+                    className="h-[360px]"
+                    onPointSelect={(pointId) => {
+                      if (dropPoints.some((point) => point.id === pointId)) {
+                        setSelectedDropPointId(pointId);
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  {dropPointsWithDistance.length === 0 ? (
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400">
+                      Belum ada drop point tersedia.
+                    </div>
+                  ) : (
+                    dropPointsWithDistance.map((point, index) => (
+                      <button
+                        key={point.id}
+                        onClick={() => setSelectedDropPointId(point.id)}
+                        className={`
+                          w-full rounded-xl border p-4 text-left transition-all
+                          ${selectedDropPointId === point.id
+                            ? 'border-green-500 bg-green-500/10'
+                            : 'border-white/10 bg-white/5 hover:border-white/20'
+                          }
+                        `}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex items-center gap-2 text-white">
+                              <MapPin className="w-4 h-4 text-green-400" />
+                              {point.name}
+                            </div>
+                            <div className="mt-1 text-sm text-gray-400">{point.address}</div>
+                          </div>
+                          {index === 0 && point.distanceKm != null && (
+                            <span className="rounded-full bg-green-500/10 px-2 py-1 text-xs text-green-300">
+                              Terdekat
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-3 text-xs text-gray-500">
+                          {point.distanceKm != null
+                            ? `${point.distanceKm.toFixed(2)} km dari lokasi Anda`
+                            : 'Aktifkan GPS untuk estimasi jarak'}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {selectedDropPoint && (
+                <div className="mb-6 rounded-xl border border-green-500/30 bg-green-500/10 p-4">
+                  <div className="text-sm text-gray-400">Drop point dipilih</div>
+                  <div className="mt-1 text-white">{selectedDropPoint.name}</div>
+                  <div className="text-sm text-gray-300">{selectedDropPoint.address}</div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep(2)}
+                  className="flex-1 py-3 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-all"
+                >
+                  Kembali
+                </button>
+                <button
+                  onClick={() => setStep(4)}
+                  disabled={dropPoints.length > 0 && !selectedDropPointId}
+                  className="flex-1 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
+                >
+                  Lanjut
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {step === 4 && (
+            <motion.div
+              key="step4"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -243,7 +481,7 @@ export function WasteSubmissionForm({
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setStep(2)}
+                  onClick={() => setStep(3)}
                   className="flex-1 py-3 bg-white/5 text-white rounded-lg hover:bg-white/10 transition-all"
                 >
                   Kembali
