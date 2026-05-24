@@ -197,11 +197,17 @@ export function EmbeddedMap({
   const mapElementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const layerRef = useRef<any>(null);
+  const isAutoFittingRef = useRef(false);
+  const hasUserMovedMapRef = useRef(false);
+  const lastAutoFitKeyRef = useRef('');
   const [leaflet, setLeaflet] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [roadRoute, setRoadRoute] = useState<LatLngTuple[] | null>(null);
   const [isLoadingRoadRoute, setIsLoadingRoadRoute] = useState(false);
   const validPoints = points.filter(isValidPoint);
+  const pointsKey = validPoints
+    .map((point) => `${point.id}:${point.latitude}:${point.longitude}`)
+    .join('|');
   const routeKey = createRouteKey(validPoints, routePointIds);
 
   useEffect(() => {
@@ -232,6 +238,12 @@ export function EmbeddedMap({
     mapRef.current = leaflet.map(mapElementRef.current, {
       zoomControl: true,
       attributionControl: true,
+    });
+
+    mapRef.current.on('dragstart zoomstart', () => {
+      if (!isAutoFittingRef.current) {
+        hasUserMovedMapRef.current = true;
+      }
     });
 
     leaflet
@@ -349,13 +361,25 @@ export function EmbeddedMap({
       }
     }
 
+    const routeBounds = roadRoute && roadRoute.length >= 2;
     const bounds = leaflet.latLngBounds(
-      roadRoute && roadRoute.length >= 2
+      routeBounds
         ? roadRoute
         : validPoints.map((point) => [point.latitude, point.longitude]),
     );
-    mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
-  }, [leaflet, onPointSelect, points, roadRoute, routePointIds, validPoints]);
+    const autoFitKey = routeBounds
+      ? `route:${routeKey}:${roadRoute.length}`
+      : `points:${pointsKey}`;
+
+    if (!hasUserMovedMapRef.current && lastAutoFitKeyRef.current !== autoFitKey) {
+      isAutoFittingRef.current = true;
+      mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
+      lastAutoFitKeyRef.current = autoFitKey;
+      window.setTimeout(() => {
+        isAutoFittingRef.current = false;
+      }, 0);
+    }
+  }, [leaflet, onPointSelect, pointsKey, roadRoute, routeKey, routePointIds]);
 
   if (loadError) {
     return (
@@ -381,7 +405,7 @@ export function EmbeddedMap({
         </div>
       )}
       {isLoadingRoadRoute && (
-        <div className="absolute left-4 top-4 z-10 rounded-full border border-emerald-400/30 bg-slate-950/85 px-3 py-1 text-xs text-emerald-200 shadow-lg backdrop-blur">
+        <div className="pointer-events-none absolute left-4 top-4 z-10 rounded-full border border-emerald-400/30 bg-slate-950/85 px-3 py-1 text-xs text-emerald-200 shadow-lg backdrop-blur">
           Menghitung rute jalan...
         </div>
       )}
