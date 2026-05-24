@@ -27,6 +27,8 @@ interface EmbeddedMapProps {
   onPointSelect?: (pointId: string) => void;
 }
 
+type LatLngTuple = [number, number];
+
 function loadLeaflet() {
   if (window.L) {
     return Promise.resolve(window.L);
@@ -111,6 +113,80 @@ function createMarkerIcon(L: any, point: MapPoint) {
   });
 }
 
+function getRouteEndpoints(
+  points: Array<MapPoint & { latitude: number; longitude: number }>,
+  routePointIds?: [string, string],
+) {
+  if (!routePointIds) {
+    return null;
+  }
+
+  const start = points.find((point) => point.id === routePointIds[0]);
+  const end = points.find((point) => point.id === routePointIds[1]);
+
+  if (!start || !end) {
+    return null;
+  }
+
+  return { start, end };
+}
+
+function createRouteKey(
+  points: Array<MapPoint & { latitude: number; longitude: number }>,
+  routePointIds?: [string, string],
+) {
+  const endpoints = getRouteEndpoints(points, routePointIds);
+
+  if (!endpoints) {
+    return '';
+  }
+
+  return [
+    endpoints.start.id,
+    endpoints.start.latitude,
+    endpoints.start.longitude,
+    endpoints.end.id,
+    endpoints.end.latitude,
+    endpoints.end.longitude,
+  ].join(':');
+}
+
+async function fetchRoadRoute(
+  origin: MapPoint & { latitude: number; longitude: number },
+  destination: MapPoint & { latitude: number; longitude: number },
+  signal: AbortSignal,
+): Promise<LatLngTuple[]> {
+  const coordinates = `${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordinates}?overview=full&geometries=geojson&steps=false`;
+  const response = await fetch(url, { signal });
+
+  if (!response.ok) {
+    throw new Error('Routing service unavailable');
+  }
+
+  const data = await response.json();
+  const routeCoordinates = data?.routes?.[0]?.geometry?.coordinates;
+
+  if (!Array.isArray(routeCoordinates) || routeCoordinates.length < 2) {
+    throw new Error('Routing geometry not found');
+  }
+
+  return routeCoordinates
+    .map((coordinate: unknown): LatLngTuple | null => {
+      if (!Array.isArray(coordinate) || coordinate.length < 2) {
+        return null;
+      }
+
+      const [longitude, latitude] = coordinate;
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return null;
+      }
+
+      return [latitude as number, longitude as number];
+    })
+    .filter((coordinate): coordinate is LatLngTuple => Boolean(coordinate));
+}
+
 export function EmbeddedMap({
   points,
   routePointIds,
@@ -123,7 +199,10 @@ export function EmbeddedMap({
   const layerRef = useRef<any>(null);
   const [leaflet, setLeaflet] = useState<any>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [roadRoute, setRoadRoute] = useState<LatLngTuple[] | null>(null);
+  const [isLoadingRoadRoute, setIsLoadingRoadRoute] = useState(false);
   const validPoints = points.filter(isValidPoint);
+  const routeKey = createRouteKey(validPoints, routePointIds);
 
   useEffect(() => {
     let isMounted = true;
@@ -171,6 +250,43 @@ export function EmbeddedMap({
   }, [leaflet]);
 
   useEffect(() => {
+    if (!routeKey) {
+      setRoadRoute(null);
+      setIsLoadingRoadRoute(false);
+      return;
+    }
+
+    const endpoints = getRouteEndpoints(validPoints, routePointIds);
+    if (!endpoints) {
+      setRoadRoute(null);
+      setIsLoadingRoadRoute(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setIsLoadingRoadRoute(true);
+
+    fetchRoadRoute(endpoints.start, endpoints.end, controller.signal)
+      .then((route) => {
+        setRoadRoute(route);
+      })
+      .catch((error) => {
+        if (error.name !== 'AbortError') {
+          setRoadRoute(null);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoadingRoadRoute(false);
+        }
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [routeKey]);
+
+  useEffect(() => {
     if (!leaflet || !mapRef.current) {
       return;
     }
@@ -205,18 +321,27 @@ export function EmbeddedMap({
     });
 
     if (routePointIds) {
-      const routePoints = routePointIds
-        .map((id) => validPoints.find((point) => point.id === id))
-        .filter(Boolean);
+      const endpoints = getRouteEndpoints(validPoints, routePointIds);
 
-      if (routePoints.length === 2) {
+      if (roadRoute && roadRoute.length >= 2) {
+        leaflet
+          .polyline(roadRoute, {
+            color: '#22c55e',
+            weight: 5,
+            opacity: 0.95,
+          })
+          .addTo(layerRef.current);
+      } else if (endpoints) {
         leaflet
           .polyline(
-            routePoints.map((point: MapPoint) => [point.latitude, point.longitude]),
+            [
+              [endpoints.start.latitude, endpoints.start.longitude],
+              [endpoints.end.latitude, endpoints.end.longitude],
+            ],
             {
-              color: '#22c55e',
-              weight: 5,
-              opacity: 0.9,
+              color: '#facc15',
+              weight: 4,
+              opacity: 0.8,
               dashArray: '10 8',
             },
           )
@@ -225,10 +350,12 @@ export function EmbeddedMap({
     }
 
     const bounds = leaflet.latLngBounds(
-      validPoints.map((point) => [point.latitude, point.longitude]),
+      roadRoute && roadRoute.length >= 2
+        ? roadRoute
+        : validPoints.map((point) => [point.latitude, point.longitude]),
     );
     mapRef.current.fitBounds(bounds, { padding: [36, 36], maxZoom: 15 });
-  }, [leaflet, onPointSelect, points, routePointIds, validPoints]);
+  }, [leaflet, onPointSelect, points, roadRoute, routePointIds, validPoints]);
 
   if (loadError) {
     return (
@@ -251,6 +378,11 @@ export function EmbeddedMap({
       {!leaflet && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 text-sm text-gray-400">
           Memuat map...
+        </div>
+      )}
+      {isLoadingRoadRoute && (
+        <div className="absolute left-4 top-4 z-10 rounded-full border border-emerald-400/30 bg-slate-950/85 px-3 py-1 text-xs text-emerald-200 shadow-lg backdrop-blur">
+          Menghitung rute jalan...
         </div>
       )}
       <div ref={mapElementRef} className="absolute inset-0 h-full min-h-full w-full" />

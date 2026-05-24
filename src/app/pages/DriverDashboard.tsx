@@ -29,8 +29,16 @@ function getRouteDestination(route: PickupRoute | null) {
     return null;
   }
 
-  const latitude = route.drop_point_latitude ?? route.latitude;
-  const longitude = route.drop_point_longitude ?? route.longitude;
+  const latitude =
+    route.drop_point_latitude ??
+    route.drop_point?.latitude ??
+    route.submission?.drop_point_latitude ??
+    route.latitude;
+  const longitude =
+    route.drop_point_longitude ??
+    route.drop_point?.longitude ??
+    route.submission?.drop_point_longitude ??
+    route.longitude;
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return null;
@@ -39,8 +47,17 @@ function getRouteDestination(route: PickupRoute | null) {
   return {
     latitude: latitude as number,
     longitude: longitude as number,
-    name: route.drop_point_name || 'Drop point',
-    address: route.drop_point_address || route.address || 'Alamat drop point belum diisi',
+    name:
+      route.drop_point_name ||
+      route.drop_point?.name ||
+      route.submission?.drop_point_name ||
+      'Drop point',
+    address:
+      route.drop_point_address ||
+      route.drop_point?.address ||
+      route.submission?.drop_point_address ||
+      route.address ||
+      'Alamat drop point belum diisi',
   };
 }
 
@@ -366,10 +383,17 @@ export function DriverDashboard() {
                     <div>
                       <div className="text-gray-500">Drop Point</div>
                       <div className="text-white">
-                        {route.drop_point_name || 'Drop point belum diisi'}
+                        {route.drop_point_name ||
+                          route.drop_point?.name ||
+                          route.submission?.drop_point_name ||
+                          'Drop point belum diisi'}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {route.drop_point_address || route.address || '-'}
+                        {route.drop_point_address ||
+                          route.drop_point?.address ||
+                          route.submission?.drop_point_address ||
+                          route.address ||
+                          '-'}
                       </div>
                     </div>
                   </div>
