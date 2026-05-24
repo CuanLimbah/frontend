@@ -340,6 +340,7 @@ export function AdminDashboard() {
         >
           {activeTab === 'verification' && (
             <VerificationQueue
+              accessToken={accessToken}
               submissions={dashboard.pending_submissions}
               prices={dashboard.prices}
               onApprove={handleApproveSubmission}

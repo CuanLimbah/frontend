@@ -7,6 +7,8 @@ import type {
   PickupRoute,
   PickupRouteStatus,
   QualityAiAnalytics,
+  QualitySimilarCaseSearchProvider,
+  QualitySimilarCaseSearchResult,
   QualityFeedbackSeverity,
   QualityFeedbackTag,
   QualityGrade,
@@ -167,6 +169,13 @@ export interface QualityAiAnalyticsParams {
   wasteType?: WasteType;
 }
 
+export interface QualitySimilarCasesParams {
+  submissionId: string;
+  limit?: number;
+  minSimilarity?: number;
+  provider?: QualitySimilarCaseSearchProvider;
+}
+
 export interface CreateWithdrawalPayload {
   amount: number;
   method: WithdrawalMethod;
@@ -298,6 +307,23 @@ export const api = {
     const query = searchParams.toString();
     return request<QualityAiAnalytics>(
       `/admin/analytics/quality-ai${query ? `?${query}` : ''}`,
+      {},
+      token,
+    );
+  },
+
+  getQualitySimilarCases(token: string, params: QualitySimilarCasesParams) {
+    const searchParams = new URLSearchParams();
+
+    searchParams.set('submissionId', params.submissionId);
+    if (params.limit != null) searchParams.set('limit', String(params.limit));
+    if (params.minSimilarity != null) {
+      searchParams.set('minSimilarity', String(params.minSimilarity));
+    }
+    if (params.provider) searchParams.set('provider', params.provider);
+
+    return request<QualitySimilarCaseSearchResult>(
+      `/admin/quality-dataset/vector/similar-cases?${searchParams.toString()}`,
       {},
       token,
     );

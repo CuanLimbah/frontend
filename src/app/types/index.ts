@@ -135,6 +135,38 @@ export interface QualityCheckResult {
   visualObservation?: AiVisualObservations;
 }
 
+export type QualitySimilarCaseProvider =
+  | 'supabase_pgvector'
+  | 'application_cosine'
+  | 'fallback_none'
+  | 'embedding_unavailable';
+
+export type QualitySimilarCaseSearchProvider =
+  | 'auto'
+  | 'supabase_pgvector'
+  | 'application_cosine';
+
+export interface QualitySimilarCase {
+  submission_id: string;
+  waste_type: WasteType;
+  image_url?: string;
+  final_quality_grade?: QualityGrade;
+  ai_quality_grade?: QualityGrade;
+  ai_quality_confidence?: number;
+  visual_observation_text?: string;
+  quality_feedback?: QualityFeedback;
+  override_primary_reason?: QualityFeedbackTag;
+  ai_error_pattern?: string;
+  similarity: number;
+  created_at: string;
+}
+
+export interface QualitySimilarCaseSearchResult {
+  provider: QualitySimilarCaseProvider;
+  fallbackUsed: boolean;
+  cases: QualitySimilarCase[];
+}
+
 export interface QualityAiAnalytics {
   totalQualityChecks: number;
   totalAdminDecisions: number;
