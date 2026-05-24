@@ -36,11 +36,11 @@ export function Landing() {
   const faqs = [
     {
       q: 'Jenis limbah apa yang diterima?',
-      a: 'Kami menerima Sampah Sisa Makanan dan Minyak Jelantah dengan harga kompetitif per KG'
+      a: 'Kami menerima Sampah Sisa Makanan dengan harga per KG dan Minyak Jelantah dengan harga per liter'
     },
     {
       q: 'Berapa minimal setor?',
-      a: 'Minimal 1 KG per jenis limbah. Untuk UMKM bisa konsultasi langsung dengan tim kami'
+      a: 'Minimal 1 KG untuk sisa makanan atau 1 liter untuk minyak jelantah. Untuk UMKM bisa konsultasi langsung dengan tim kami'
     },
     {
       q: 'Bagaimana cara penarikan dana?',

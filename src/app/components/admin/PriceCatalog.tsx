@@ -3,6 +3,7 @@ import { Edit2, Save, X } from 'lucide-react';
 import type { WastePrice } from '../../types';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/api';
+import { getPriceUnitSuffix } from '../../lib/waste-unit';
 
 interface PriceCatalogProps {
   prices: WastePrice[];
@@ -57,7 +58,7 @@ export function PriceCatalog({ prices, onSavePrice }: PriceCatalogProps) {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl text-white">Katalog Harga Limbah</h2>
-        <div className="text-gray-400 text-sm">Harga per KG (Rupiah)</div>
+        <div className="text-gray-400 text-sm">Harga per unit (Rupiah)</div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 max-w-2xl">
@@ -117,7 +118,8 @@ export function PriceCatalog({ prices, onSavePrice }: PriceCatalogProps) {
               </div>
             ) : (
               <div className="text-3xl text-green-500">
-                Rp {price.price_per_kg.toLocaleString('id-ID')}
+                Rp {price.price_per_kg.toLocaleString('id-ID')}/
+                {getPriceUnitSuffix(price.waste_type)}
               </div>
             )}
           </div>

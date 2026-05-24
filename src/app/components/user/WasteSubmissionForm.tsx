@@ -4,6 +4,12 @@ import type { DropPoint, WastePrice, WasteType } from '../../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getErrorMessage, type CreateSubmissionPayload } from '../../lib/api';
+import {
+  getEstimatedQuantityLabel,
+  getPriceUnitSuffix,
+  getUnitSuffix,
+  getWasteQuantityLabel,
+} from '../../lib/waste-unit';
 import { EmbeddedMap, type MapPoint } from '../common/EmbeddedMap';
 
 interface WasteSubmissionFormProps {
@@ -252,7 +258,8 @@ export function WasteSubmissionForm({
                       <div className="flex-1">
                         <div className="text-lg text-white mb-1">{type.label}</div>
                         <div className="text-green-500 text-xl">
-                          Rp {price?.price_per_kg.toLocaleString('id-ID')}/KG
+                          Rp {price?.price_per_kg.toLocaleString('id-ID')}/
+                          {getPriceUnitSuffix(type.value)}
                         </div>
                       </div>
                     </button>
@@ -277,11 +284,21 @@ export function WasteSubmissionForm({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
             >
-              <h2 className="text-2xl text-white mb-2">Estimasi Berat</h2>
-              <p className="text-gray-400 mb-6">Masukkan perkiraan berat limbah (dalam KG)</p>
+              <h2 className="text-2xl text-white mb-2">
+                {wasteType ? getEstimatedQuantityLabel(wasteType) : 'Estimasi Kuantitas'}
+              </h2>
+              <p className="text-gray-400 mb-6">
+                {wasteType === 'oil'
+                  ? 'Masukkan perkiraan volume minyak jelantah dalam liter.'
+                  : 'Masukkan perkiraan berat sisa makanan dalam kilogram.'}
+              </p>
 
               <div className="mb-6">
-                <label className="block text-white mb-2">Berat (KG)</label>
+                <label className="block text-white mb-2">
+                  {wasteType
+                    ? `${getWasteQuantityLabel(wasteType)} (${getUnitSuffix(wasteType)})`
+                    : 'Kuantitas'}
+                </label>
                 <div className="relative">
                   <Package className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input

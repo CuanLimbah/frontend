@@ -7,6 +7,7 @@ import {
   type AssignPickupRoutePayload,
   type CreateDriverPayload,
 } from '../../lib/api';
+import { getUnitSuffix } from '../../lib/waste-unit';
 import { EmbeddedMap, type MapPoint } from '../common/EmbeddedMap';
 
 interface DriverOperationsProps {
@@ -238,7 +239,8 @@ export function DriverOperations({
               </option>
               {pendingSubmissions.map((submission) => (
                 <option key={submission.id} value={submission.id} className="bg-[#0a0a0f] text-white">
-                  {submission.id} - {submission.waste_type} - {submission.estimated_weight} KG
+                  {submission.id} - {submission.waste_type} - {submission.estimated_weight}{' '}
+                  {getUnitSuffix(submission.waste_type)}
                   {submission.drop_point_name ? ` - ${submission.drop_point_name}` : ''}
                 </option>
               ))}

@@ -2,6 +2,12 @@ import { WasteSubmission } from '../../types';
 import { CheckCircle, Clock, XCircle, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import {
+  getActualQuantityLabel,
+  getEstimatedQuantityLabel,
+  getPricePerUnitLabel,
+  getUnitSuffix,
+} from '../../lib/waste-unit';
 
 interface StatusTrackerProps {
   submissions: WasteSubmission[];
@@ -101,7 +107,8 @@ export function StatusTracker({ submissions }: StatusTrackerProps) {
                   <div className="absolute left-0 -translate-x-1/2 w-4 h-4 rounded-full bg-green-500 border-2 border-[#0a0a0f]" />
                   <div className="text-sm text-gray-400">Setoran dibuat</div>
                   <div className="text-white">
-                    Estimasi: {submission.estimated_weight} KG
+                    {getEstimatedQuantityLabel(submission.waste_type)}:{' '}
+                    {submission.estimated_weight} {getUnitSuffix(submission.waste_type)}
                   </div>
                 </div>
 
@@ -110,7 +117,8 @@ export function StatusTracker({ submissions }: StatusTrackerProps) {
                     <div className="absolute left-0 -translate-x-1/2 w-4 h-4 rounded-full bg-blue-400 border-2 border-[#0a0a0f]" />
                     <div className="text-sm text-gray-400">Terverifikasi</div>
                     <div className="text-white">
-                      Berat Aktual: {submission.actual_weight} KG
+                      {getActualQuantityLabel(submission.waste_type)}:{' '}
+                      {submission.actual_weight} {getUnitSuffix(submission.waste_type)}
                     </div>
                   </div>
                 )}
@@ -134,7 +142,9 @@ export function StatusTracker({ submissions }: StatusTrackerProps) {
                         )}
                         {submission.final_price_per_kg != null && (
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                            <span className="text-gray-400">Harga Final / KG</span>
+                            <span className="text-gray-400">
+                              {getPricePerUnitLabel(submission.waste_type)}
+                            </span>
                             <span className="text-white">
                               {formatRupiah(submission.final_price_per_kg)}
                             </span>

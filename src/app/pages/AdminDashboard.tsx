@@ -255,7 +255,7 @@ export function AdminDashboard() {
               className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-xs sm:text-sm">Total Limbah (KG)</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Total Kuantitas</span>
                 <Package className="w-5 h-5 text-green-500" />
               </div>
               <div className="text-xl sm:text-3xl text-white">

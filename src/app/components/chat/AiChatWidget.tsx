@@ -19,7 +19,7 @@ const welcomeMessage: ChatMessage = {
 };
 
 const suggestedPrompts = [
-  'Estimasi cuan 10 kg minyak jelantah grade B',
+  'Estimasi cuan 10 liter minyak jelantah grade B',
   'Kenapa harga setoran saya berubah?',
   'Apa bedanya grade A, B, dan C?',
 ];
