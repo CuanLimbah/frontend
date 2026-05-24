@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Bot, Loader2, MessageCircle, SendHorizontal, Sparkles, X } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { api, getErrorMessage, type ChatAction } from '../../lib/api';
 import { useAuth } from '../../providers/AuthProvider';
 import './AiChatWidget.css';
@@ -30,6 +31,31 @@ function createMessage(sender: ChatMessage['sender'], text: string): ChatMessage
     sender,
     text,
   };
+}
+
+function AssistantMessageContent({ text }: { text: string }) {
+  return (
+    <div className="ai-chat-markdown">
+      <ReactMarkdown
+        components={{
+          h1: ({ node, ...props }) => <h3 {...props} />,
+          h2: ({ node, ...props }) => <h3 {...props} />,
+          h3: ({ node, ...props }) => <h3 {...props} />,
+          p: ({ node, ...props }) => <p {...props} />,
+          ul: ({ node, ...props }) => <ul {...props} />,
+          ol: ({ node, ...props }) => <ol {...props} />,
+          li: ({ node, ...props }) => <li {...props} />,
+          strong: ({ node, ...props }) => <strong {...props} />,
+          a: ({ node, ...props }) => (
+            <a {...props} target="_blank" rel="noreferrer" />
+          ),
+          code: ({ node, ...props }) => <code {...props} />,
+        }}
+      >
+        {text}
+      </ReactMarkdown>
+    </div>
+  );
 }
 
 export function AiChatWidget() {
@@ -133,7 +159,11 @@ export function AiChatWidget() {
                 key={message.id}
                 className={`ai-chat-message ai-chat-message-${message.sender}`}
               >
-                <p>{message.text}</p>
+                {message.sender === 'assistant' ? (
+                  <AssistantMessageContent text={message.text} />
+                ) : (
+                  <p>{message.text}</p>
+                )}
                 {message.action?.type === 'NAVIGATE' && (
                   <span className="ai-chat-action">
                     Membuka {message.action.payload}
