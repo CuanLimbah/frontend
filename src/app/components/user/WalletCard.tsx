@@ -1,8 +1,17 @@
 import { useState } from 'react';
-import { Wallet, ArrowDown, X } from 'lucide-react';
+import { Wallet, ArrowDown, X, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getErrorMessage, type CreateWithdrawalPayload } from '../../lib/api';
+
+type WithdrawalMethod = CreateWithdrawalPayload['method'];
+
+const WITHDRAWAL_METHODS: Array<{ value: WithdrawalMethod; label: string }> = [
+  { value: 'gopay', label: 'GoPay' },
+  { value: 'ovo', label: 'OVO' },
+  { value: 'dana', label: 'DANA' },
+  { value: 'bank', label: 'Transfer Bank' },
+];
 
 interface WalletCardProps {
   balance: number;
@@ -17,8 +26,9 @@ export function WalletCard({
 }: WalletCardProps) {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState<'gopay' | 'ovo' | 'dana' | 'bank'>('gopay');
+  const [method, setMethod] = useState<WithdrawalMethod>('gopay');
   const [account, setAccount] = useState('');
+  const isBankTransfer = method === 'bank';
 
   const handleWithdraw = async () => {
     try {
@@ -29,13 +39,13 @@ export function WalletCard({
       });
 
       toast.success(
-        `Permintaan penarikan Rp ${parseFloat(amount).toLocaleString('id-ID')} berhasil diajukan.`,
+        `Simulasi penarikan Rp ${parseFloat(amount).toLocaleString('id-ID')} berhasil diajukan.`,
       );
       setShowWithdrawModal(false);
       setAmount('');
       setAccount('');
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Gagal mengajukan penarikan dana.'));
+      toast.error(getErrorMessage(error, 'Gagal mengajukan simulasi penarikan dana.'));
     }
   };
 
@@ -48,7 +58,12 @@ export function WalletCard({
               <Wallet className="w-6 h-6 text-green-500" />
             </div>
             <div>
-              <div className="text-gray-400">Saldo Wallet Anda</div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <span>Saldo Wallet Anda</span>
+                <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-xs text-green-400">
+                  Mode demo
+                </span>
+              </div>
               <div className="text-2xl sm:text-4xl text-white">
                 Rp {balance.toLocaleString('id-ID')}
               </div>
@@ -61,22 +76,21 @@ export function WalletCard({
             className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
             <ArrowDown className="w-5 h-5" />
-            <span>Tarik Dana</span>
+            <span>Ajukan Simulasi Penarikan</span>
           </button>
         </div>
 
         <div className="p-6 rounded-xl bg-white/5 border border-white/10">
           <h3 className="text-white mb-4">Informasi Wallet</h3>
           <ul className="space-y-3 text-gray-400">
-            <li>• Minimal penarikan: Rp 10.000</li>
-            <li>• Proses penarikan: 1x24 jam kerja</li>
-            <li>• Tanpa biaya admin untuk semua metode</li>
-            <li>• Tersedia: GoPay, OVO, DANA, Transfer Bank</li>
+            <li>- Minimal penarikan: Rp 10.000</li>
+            <li>- Saldo langsung ditahan saat status pending</li>
+            <li>- Admin hanya menandai berhasil/ditolak untuk demo</li>
+            <li>- Tidak ada transfer asli atau API payment pihak ketiga</li>
           </ul>
         </div>
       </div>
 
-      {/* Withdrawal Modal */}
       <AnimatePresence>
         {showWithdrawModal && (
           <motion.div
@@ -93,14 +107,27 @@ export function WalletCard({
               onClick={(e) => e.stopPropagation()}
               className="bg-[#0a0a0f] border border-green-500/30 rounded-xl p-6 max-w-md w-full"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl text-white">Tarik Dana</h2>
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <h2 className="text-2xl text-white">Simulasi Tarik Dana</h2>
+                  <p className="mt-1 text-sm text-gray-400">
+                    Pengajuan ini hanya masuk antrean admin, belum mengirim dana asli.
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowWithdrawModal(false)}
                   className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                 >
                   <X className="w-5 h-5 text-gray-400" />
                 </button>
+              </div>
+
+              <div className="mb-5 flex gap-3 rounded-lg border border-blue-500/30 bg-blue-500/10 p-3 text-sm text-blue-100">
+                <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-300" />
+                <div>
+                  Mode demo: saldo akan dicatat sebagai withdrawal pending. Admin dapat
+                  menyetujui atau menolak tanpa koneksi ke Duitku, Midtrans, atau provider lain.
+                </div>
               </div>
 
               <div className="mb-4">
@@ -120,19 +147,19 @@ export function WalletCard({
               <div className="mb-4">
                 <label className="block text-white mb-2">Metode Penarikan</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {['gopay', 'ovo', 'dana', 'bank'].map((m) => (
+                  {WITHDRAWAL_METHODS.map((item) => (
                     <button
-                      key={m}
-                      onClick={() => setMethod(m as typeof method)}
+                      key={item.value}
+                      onClick={() => setMethod(item.value)}
                       className={`
-                        py-2 px-4 rounded-lg border transition-all capitalize
-                        ${method === m
+                        py-2 px-4 rounded-lg border transition-all
+                        ${method === item.value
                           ? 'border-green-500 bg-green-500/10 text-green-500'
                           : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/20'
                         }
                       `}
                     >
-                      {m === 'bank' ? 'Transfer Bank' : m.toUpperCase()}
+                      {item.label}
                     </button>
                   ))}
                 </div>
@@ -140,13 +167,13 @@ export function WalletCard({
 
               <div className="mb-6">
                 <label className="block text-white mb-2">
-                  {method === 'bank' ? 'Nomor Rekening' : 'Nomor HP'}
+                  {isBankTransfer ? 'Nomor Rekening' : 'Nomor HP E-Wallet'}
                 </label>
                 <input
                   type="text"
                   value={account}
                   onChange={(e) => setAccount(e.target.value)}
-                  placeholder={method === 'bank' ? '1234567890' : '08123456789'}
+                  placeholder={isBankTransfer ? '1234567890' : '08123456789'}
                   className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-green-500 focus:outline-none"
                 />
               </div>
@@ -162,7 +189,7 @@ export function WalletCard({
                 }
                 className="w-full py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all"
               >
-                {isSubmitting ? 'Memproses...' : 'Ajukan Penarikan'}
+                {isSubmitting ? 'Memproses...' : 'Ajukan Simulasi Penarikan'}
               </button>
             </motion.div>
           </motion.div>

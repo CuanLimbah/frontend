@@ -23,7 +23,7 @@ export function WithdrawalPanel({
     try {
       setProcessingId(requestId);
       await onApprove(requestId);
-      toast.success('Penarikan berhasil disetujui.');
+      toast.success('Simulasi penarikan ditandai berhasil.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Gagal menyetujui penarikan.'));
     } finally {
@@ -38,7 +38,7 @@ export function WithdrawalPanel({
     try {
       setProcessingId(requestId);
       await onReject(requestId, reason);
-      toast.success('Penarikan ditolak.');
+      toast.success('Simulasi penarikan ditolak.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Gagal menolak penarikan.'));
     } finally {
@@ -51,7 +51,17 @@ export function WithdrawalPanel({
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h2 className="text-2xl text-white mb-6">Panel Penarikan Dana</h2>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="text-2xl text-white">Panel Penarikan Dana</h2>
+          <p className="mt-2 text-sm text-gray-400">
+            Mode simulasi: approval hanya mengubah status wallet, tidak memanggil API third-party.
+          </p>
+        </div>
+        <span className="w-fit rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-sm text-blue-300">
+          Demo payout
+        </span>
+      </div>
 
       {/* Pending Requests */}
       <div className="mb-8">
@@ -111,7 +121,7 @@ export function WithdrawalPanel({
                     >
                       <CheckCircle className="w-5 h-5" />
                       <span>
-                        {processingId === request.id ? 'Memproses...' : 'Approve & Transfer'}
+                        {processingId === request.id ? 'Memproses...' : 'Tandai Berhasil'}
                       </span>
                     </button>
 
@@ -161,7 +171,7 @@ export function WithdrawalPanel({
                       {request.status === 'completed' ? (
                         <span className="flex items-center gap-2 text-green-500">
                           <CheckCircle className="w-4 h-4" />
-                          Berhasil
+                          Selesai Demo
                         </span>
                       ) : (
                         <span className="flex items-center gap-2 text-red-400">

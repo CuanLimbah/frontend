@@ -19,8 +19,19 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
     }
   };
 
-  const getStatusLabel = (status: Transaction['status']) => {
-    switch (status) {
+  const getStatusLabel = (transaction: Transaction) => {
+    if (transaction.type === 'withdrawal') {
+      switch (transaction.status) {
+        case 'completed':
+          return 'Selesai Demo';
+        case 'pending':
+          return 'Menunggu Admin';
+        case 'rejected':
+          return 'Ditolak';
+      }
+    }
+
+    switch (transaction.status) {
       case 'completed':
         return 'Berhasil';
       case 'pending':
@@ -28,6 +39,14 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
       case 'rejected':
         return 'Ditolak';
     }
+  };
+
+  const getWithdrawalMethodLabel = (method?: Transaction['withdrawal_method']) => {
+    if (method === 'bank') {
+      return 'Transfer Bank';
+    }
+
+    return method ? method.toUpperCase() : 'Simulasi Penarikan';
   };
 
   return (
@@ -81,12 +100,15 @@ export function TransactionHistory({ transactions }: TransactionHistoryProps) {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(transaction.status)}
-                      <span className="text-white text-sm">{getStatusLabel(transaction.status)}</span>
+                      <span className="text-white text-sm">{getStatusLabel(transaction)}</span>
                     </div>
                   </td>
                   <td className="px-6 py-4 text-gray-400 text-sm">
                     {transaction.type === 'withdrawal' && transaction.withdrawal_method ? (
-                      <span className="capitalize">{transaction.withdrawal_method}</span>
+                      <span>
+                        Simulasi {getWithdrawalMethodLabel(transaction.withdrawal_method)}
+                        {transaction.withdrawal_account ? ` - ${transaction.withdrawal_account}` : ''}
+                      </span>
                     ) : (
                       <span>Setoran Limbah</span>
                     )}
