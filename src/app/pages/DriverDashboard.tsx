@@ -4,6 +4,7 @@ import { Navigate } from 'react-router';
 import { toast } from 'sonner';
 import { motion } from 'motion/react';
 import { api, ApiError, getErrorMessage } from '../lib/api';
+import { getUnitSuffix } from '../lib/waste-unit';
 import { EmbeddedMap, type MapPoint } from '../components/common/EmbeddedMap';
 import { PageErrorState, PageLoader } from '../components/common/PageState';
 import { useAuth } from '../providers/AuthProvider';
@@ -554,7 +555,10 @@ export function DriverDashboard() {
                       <div className="text-gray-500">Setoran</div>
                       <div className="text-white">
                         {route.submission?.waste_type || '-'} -{' '}
-                        {route.submission?.estimated_weight || 0} KG
+                        {route.submission?.estimated_weight || 0}{' '}
+                        {route.submission
+                          ? getUnitSuffix(route.submission.waste_type)
+                          : 'KG'}
                       </div>
                     </div>
                     <div>

@@ -1,6 +1,7 @@
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, Users, Package, DollarSign } from 'lucide-react';
 import type { AdminStats } from '../../types';
+import { getUnitSuffix } from '../../lib/waste-unit';
 
 interface AnalyticsDashboardProps {
   stats: AdminStats;
@@ -21,6 +22,7 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
     name: wasteLabels[item.type],
     value: item.weight,
     color: wasteColors[item.type],
+    type: item.type,
   }));
 
   const topWaste = [...stats.waste_by_type].sort((left, right) => right.weight - left.weight)[0];
@@ -43,7 +45,7 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
 
         <div className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/5 border border-green-500/30">
           <Package className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mb-3" />
-          <div className="text-gray-400 text-sm mb-1">Total Limbah (KG)</div>
+          <div className="text-gray-400 text-sm mb-1">Total Kuantitas</div>
           <div className="text-2xl sm:text-3xl text-white">{stats.total_waste_collected.toLocaleString('id-ID')}</div>
         </div>
 
@@ -62,7 +64,6 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
             {stats.total_users > 0
               ? (stats.total_waste_collected / stats.total_users).toFixed(1)
               : '0.0'}{' '}
-            KG
           </div>
         </div>
       </div>
@@ -105,7 +106,7 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
 
         {/* Waste by Type - Pie Chart */}
         <div className="p-6 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10">
-          <h3 className="text-white mb-4">Distribusi Limbah (KG)</h3>
+          <h3 className="text-white mb-4">Distribusi Limbah</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -113,7 +114,9 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, value }) => `${name}: ${value.toFixed(1)} KG`}
+                label={({ name, value, type }) =>
+                  `${name}: ${value.toFixed(1)} ${getUnitSuffix(type)}`
+                }
                 outerRadius={100}
                 fill="#8884d8"
                 dataKey="value"
@@ -146,7 +149,7 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
                 tick={{ fill: '#9ca3af' }}
                 tickFormatter={(value) => wasteLabels[value as keyof typeof wasteLabels]}
               />
-              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} label={{ value: 'KG', angle: -90, position: 'insideLeft', fill: '#9ca3af' }} />
+              <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'rgba(10, 10, 15, 0.95)',
@@ -155,7 +158,7 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
                 }}
                 labelStyle={{ color: '#9ca3af' }}
                 formatter={(value: number, name: string, props: any) => [
-                  `${value.toFixed(1)} KG`,
+                  `${value.toFixed(1)} ${getUnitSuffix(props.payload.type)}`,
                   wasteLabels[props.payload.type as keyof typeof wasteLabels]
                 ]}
               />
@@ -177,7 +180,9 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
             {topWaste ? wasteLabels[topWaste.type] : '-'}
           </div>
           <div className="text-gray-400 text-sm">
-            {topWaste ? `${topWaste.weight.toFixed(1)} KG terkumpul` : 'Belum ada data'}
+            {topWaste
+              ? `${topWaste.weight.toFixed(1)} ${getUnitSuffix(topWaste.type)} terkumpul`
+              : 'Belum ada data'}
           </div>
         </div>
 

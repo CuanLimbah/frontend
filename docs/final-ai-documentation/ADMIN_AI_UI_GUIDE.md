@@ -16,6 +16,12 @@ Verification Queue adalah tempat admin meninjau submission pending. Di flow ini 
 
 AI tidak mengisi final grade atau payout secara otomatis.
 
+Unit tampilan mengikuti jenis limbah:
+
+- Sisa makanan memakai KG.
+- Minyak jelantah memakai Liter.
+- Field API legacy seperti `estimated_weight`, `actual_weight`, dan `final_price_per_kg` tetap dipakai untuk kompatibilitas, tetapi label UI menampilkannya sebagai kuantitas sesuai `waste_type`.
+
 ## AI Quality Check Button
 
 Tombol AI Quality Check menjalankan backend endpoint:

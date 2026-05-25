@@ -203,11 +203,11 @@ export function UserDashboard() {
               className="p-4 sm:p-6 rounded-xl bg-gradient-to-br from-orange-500/20 to-orange-500/5 border border-orange-500/30"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-400 text-xs sm:text-sm">Total Berat (KG)</span>
+                <span className="text-gray-400 text-xs sm:text-sm">Total Kuantitas</span>
                 <FileText className="w-5 h-5 text-orange-400" />
               </div>
               <div className="text-xl sm:text-3xl text-white">
-                {dashboard.stats.total_weight.toFixed(1)} KG
+                {dashboard.stats.total_weight.toFixed(1)}
               </div>
             </motion.div>
           </div>

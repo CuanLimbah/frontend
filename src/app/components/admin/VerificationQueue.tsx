@@ -13,6 +13,13 @@ import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/api';
+import {
+  getActualQuantityLabel,
+  getEstimatedQuantityLabel,
+  getPricePerUnitLabel,
+  getUnitSuffix,
+  getWasteQuantityLabel,
+} from '../../lib/waste-unit';
 import { AiSimilarCasesPanel } from './AiSimilarCasesPanel';
 
 interface VerificationQueueProps {
@@ -125,11 +132,16 @@ export function VerificationQueue({
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const handleApprove = async (submissionId: string) => {
+    const submission = submissions.find((item) => item.id === submissionId);
+    const quantityLabel = submission
+      ? getWasteQuantityLabel(submission.waste_type).toLowerCase()
+      : 'berat';
+    const unitSuffix = submission ? getUnitSuffix(submission.waste_type) : 'KG';
     const weight = actualWeight[submissionId];
     const parsedWeight = parseFloat(weight);
 
     if (!weight || !Number.isFinite(parsedWeight) || parsedWeight <= 0) {
-      toast.error('Masukkan berat aktual terlebih dahulu.');
+      toast.error(`Masukkan ${quantityLabel} aktual terlebih dahulu.`);
       return;
     }
 
@@ -165,7 +177,7 @@ export function VerificationQueue({
         [submissionId]: '',
       }));
       toast.success(
-        `Setoran berhasil diverifikasi dengan berat ${weight} KG dan grade ${qualityGrade}.`,
+        `Setoran berhasil diverifikasi dengan ${quantityLabel} ${weight} ${unitSuffix} dan grade ${qualityGrade}.`,
       );
     } catch (error) {
       toast.error(getErrorMessage(error, 'Gagal memverifikasi setoran.'));
@@ -393,8 +405,12 @@ export function VerificationQueue({
                     <div className="text-white">{getWasteTypeLabel(submission.waste_type)}</div>
                   </div>
                   <div className="mb-4">
-                    <div className="text-sm text-gray-400 mb-1">Estimasi Berat</div>
-                    <div className="text-white">{submission.estimated_weight} KG</div>
+                    <div className="text-sm text-gray-400 mb-1">
+                      {getEstimatedQuantityLabel(submission.waste_type)}
+                    </div>
+                    <div className="text-white">
+                      {submission.estimated_weight} {getUnitSuffix(submission.waste_type)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-sm text-gray-400 mb-1">Waktu Submit</div>
@@ -694,7 +710,9 @@ export function VerificationQueue({
                         )}
                         {submission.final_price_per_kg != null && (
                           <div className="flex items-center justify-between gap-3 text-sm">
-                            <span className="text-gray-400">Harga Final / KG</span>
+                            <span className="text-gray-400">
+                              {getPricePerUnitLabel(submission.waste_type)}
+                            </span>
                             <span className="text-white">
                               {formatRupiah(submission.final_price_per_kg)}
                             </span>
@@ -719,14 +737,18 @@ export function VerificationQueue({
                       </div>
                     ) : (
                       <p className="text-sm text-gray-400 leading-relaxed">
-                        Nilai final dihitung backend berdasarkan berat aktual dan grade
-                        kualitas.
+                        Nilai final dihitung backend berdasarkan{' '}
+                        {getWasteQuantityLabel(submission.waste_type).toLowerCase()}{' '}
+                        aktual dan grade kualitas.
                       </p>
                     )}
                   </div>
 
                   <div className="mb-6">
-                    <label className="block text-white mb-2">Berat Aktual (KG)</label>
+                    <label className="block text-white mb-2">
+                      {getActualQuantityLabel(submission.waste_type)} (
+                      {getUnitSuffix(submission.waste_type)})
+                    </label>
                     <input
                       type="number"
                       value={actualWeight[submission.id] || ''}

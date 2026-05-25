@@ -38,7 +38,7 @@ export function UserManagement({ users }: UserManagementProps) {
             <tr>
               <th className="px-6 py-4 text-left text-sm text-gray-400">User</th>
               <th className="px-6 py-4 text-left text-sm text-gray-400">Total Setoran</th>
-              <th className="px-6 py-4 text-left text-sm text-gray-400">Total Berat (KG)</th>
+              <th className="px-6 py-4 text-left text-sm text-gray-400">Total Kuantitas</th>
               <th className="px-6 py-4 text-left text-sm text-gray-400">Total Earnings</th>
               <th className="px-6 py-4 text-left text-sm text-gray-400">Status</th>
               <th className="px-6 py-4 text-left text-sm text-gray-400">Bergabung</th>
@@ -67,7 +67,7 @@ export function UserManagement({ users }: UserManagementProps) {
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-4 h-4 text-blue-400" />
-                    <span className="text-white">{user.total_weight} KG</span>
+                    <span className="text-white">{user.total_weight}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4">
@@ -113,7 +113,6 @@ export function UserManagement({ users }: UserManagementProps) {
             {users.length > 0
               ? (users.reduce((sum, user) => sum + user.total_weight, 0) / users.length).toFixed(1)
               : '0.0'}{' '}
-            KG
           </div>
         </div>
       </div>
