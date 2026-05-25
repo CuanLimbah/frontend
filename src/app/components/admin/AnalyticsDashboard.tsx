@@ -30,6 +30,20 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
   const growthEnd = stats.user_growth[stats.user_growth.length - 1]?.users ?? 0;
   const growthRate =
     growthStart > 0 ? (((growthEnd - growthStart) / growthStart) * 100).toFixed(1) : '0.0';
+  const darkTooltipStyle = {
+    backgroundColor: 'rgba(10, 10, 15, 0.96)',
+    border: '1px solid rgba(34, 197, 94, 0.35)',
+    borderRadius: '10px',
+    boxShadow: '0 18px 45px rgba(0, 0, 0, 0.35)',
+    color: '#f9fafb',
+  };
+  const darkTooltipLabelStyle = {
+    color: '#d1d5db',
+    fontWeight: 600,
+  };
+  const darkTooltipItemStyle = {
+    color: '#f9fafb',
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -84,13 +98,10 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
               />
               <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(10, 10, 15, 0.95)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '8px',
-                }}
-                labelStyle={{ color: '#9ca3af' }}
-                itemStyle={{ color: '#22c55e' }}
+                contentStyle={darkTooltipStyle}
+                labelStyle={darkTooltipLabelStyle}
+                itemStyle={darkTooltipItemStyle}
+                cursor={{ stroke: 'rgba(34, 197, 94, 0.35)', strokeWidth: 1 }}
               />
               <Line
                 type="monotone"
@@ -126,12 +137,13 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
                 ))}
               </Pie>
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(10, 10, 15, 0.95)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                }}
+                contentStyle={darkTooltipStyle}
+                labelStyle={darkTooltipLabelStyle}
+                itemStyle={darkTooltipItemStyle}
+                formatter={(value: number, _name: string, props: any) => [
+                  `${Number(value).toFixed(1)} ${getUnitSuffix(props.payload.type)}`,
+                  wasteLabels[props.payload.type as keyof typeof wasteLabels],
+                ]}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -151,12 +163,10 @@ export function AnalyticsDashboard({ stats }: AnalyticsDashboardProps) {
               />
               <YAxis stroke="#9ca3af" tick={{ fill: '#9ca3af' }} />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: 'rgba(10, 10, 15, 0.95)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                  borderRadius: '8px',
-                }}
-                labelStyle={{ color: '#9ca3af' }}
+                contentStyle={darkTooltipStyle}
+                labelStyle={darkTooltipLabelStyle}
+                itemStyle={darkTooltipItemStyle}
+                cursor={{ fill: 'rgba(34, 197, 94, 0.08)' }}
                 formatter={(value: number, name: string, props: any) => [
                   `${value.toFixed(1)} ${getUnitSuffix(props.payload.type)}`,
                   wasteLabels[props.payload.type as keyof typeof wasteLabels]
