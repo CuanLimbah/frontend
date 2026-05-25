@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarClock, Plus, Route, Truck, UserPlus } from 'lucide-react';
+import { CalendarClock, Check, ChevronDown, Plus, Route, Search, Truck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DropPoint, PaymentRecord, PickupRoute, User, WasteSubmission } from '../../types';
 import {
@@ -19,6 +19,114 @@ interface DriverOperationsProps {
   onCreateDriver: (payload: CreateDriverPayload) => Promise<void>;
   onAssignRoute: (payload: AssignPickupRoutePayload) => Promise<void>;
   onMarkPaymentPaid: (paymentId: string) => Promise<void>;
+}
+
+interface SelectOption {
+  value: string;
+  label: string;
+  description?: string;
+}
+
+interface SearchableSelectProps {
+  value: string;
+  placeholder: string;
+  searchPlaceholder: string;
+  emptyMessage: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+}
+
+function SearchableSelect({
+  value,
+  placeholder,
+  searchPlaceholder,
+  emptyMessage,
+  options,
+  onChange,
+}: SearchableSelectProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const selectedOption = options.find((option) => option.value === value);
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOptions = normalizedQuery
+    ? options.filter((option) =>
+        `${option.label} ${option.description ?? ''}`.toLowerCase().includes(normalizedQuery),
+      )
+    : options;
+
+  const handleSelect = (nextValue: string) => {
+    onChange(nextValue);
+    setQuery('');
+    setIsOpen(false);
+  };
+
+  return (
+    <div className="relative" onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-left text-white transition-colors hover:border-green-500/60 focus:border-green-500 focus:outline-none"
+      >
+        <span className="min-w-0 truncate text-sm">
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${
+            isOpen ? 'rotate-180' : ''
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[80] overflow-hidden rounded-xl border border-green-500/30 bg-[#05070a] shadow-2xl shadow-black/60">
+          <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
+            <Search className="h-4 w-4 text-gray-500" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full bg-transparent py-1 text-sm text-white placeholder-gray-500 focus:outline-none"
+              autoFocus
+            />
+          </div>
+
+          <div className="max-h-72 overflow-y-auto py-1">
+            <button
+              type="button"
+              onClick={() => handleSelect('')}
+              className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-sm text-gray-300 hover:bg-green-500/10 hover:text-white"
+            >
+              <span>{placeholder}</span>
+              {!value && <Check className="h-4 w-4 text-green-400" />}
+            </button>
+
+            {visibleOptions.length === 0 ? (
+              <div className="px-4 py-4 text-sm text-gray-500">{emptyMessage}</div>
+            ) : (
+              visibleOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleSelect(option.value)}
+                  className="flex w-full items-start justify-between gap-3 px-4 py-2 text-left text-sm text-white hover:bg-green-500/10"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate">{option.label}</span>
+                    {option.description && (
+                      <span className="mt-0.5 block truncate text-xs text-gray-500">
+                        {option.description}
+                      </span>
+                    )}
+                  </span>
+                  {option.value === value && <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-400" />}
+                </button>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function DriverOperations({
@@ -129,6 +237,23 @@ export function DriverOperations({
     );
   };
   const selectedDropPoint = dropPoints.find((dropPoint) => dropPoint.id === routeForm.dropPointId);
+  const submissionOptions: SelectOption[] = pendingSubmissions.map((submission) => ({
+    value: submission.id,
+    label: `${submission.id} - ${submission.waste_type} - ${submission.estimated_weight} ${getUnitSuffix(
+      submission.waste_type,
+    )}`,
+    description: submission.drop_point_name || submission.drop_point_address,
+  }));
+  const driverOptions: SelectOption[] = drivers.map((driver) => ({
+    value: driver.id,
+    label: driver.full_name,
+    description: [driver.email, driver.vehicle_number].filter(Boolean).join(' - '),
+  }));
+  const dropPointOptions: SelectOption[] = dropPoints.map((dropPoint) => ({
+    value: dropPoint.id,
+    label: dropPoint.name,
+    description: dropPoint.address,
+  }));
   const dropPointMapPoints: MapPoint[] = dropPoints.map((dropPoint) => ({
     id: dropPoint.id,
     label: dropPoint.name,
@@ -237,17 +362,21 @@ export function DriverOperations({
 
         <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_1fr]">
           <div className="space-y-3">
-            <select
+            <SearchableSelect
               value={routeForm.submissionId}
-              onChange={(event) => {
+              placeholder="Pilih setoran pending"
+              searchPlaceholder="Cari ID, jenis limbah, atau drop point..."
+              emptyMessage="Setoran pending tidak ditemukan."
+              options={submissionOptions}
+              onChange={(nextSubmissionId) => {
                 const nextSubmission = pendingSubmissions.find(
-                  (submission) => submission.id === event.target.value,
+                  (submission) => submission.id === nextSubmissionId,
                 );
                 const preferredDropPointId = nextSubmission?.drop_point_id;
 
                 setRouteForm((current) => ({
                   ...current,
-                  submissionId: event.target.value,
+                  submissionId: nextSubmissionId,
                   dropPointId:
                     preferredDropPointId &&
                     dropPoints.some((dropPoint) => dropPoint.id === preferredDropPointId)
@@ -255,51 +384,27 @@ export function DriverOperations({
                       : current.dropPointId,
                 }));
               }}
-              className="w-full rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-white focus:border-green-500 focus:outline-none"
-            >
-              <option value="" className="bg-[#0a0a0f] text-white">
-                Pilih setoran pending
-              </option>
-              {pendingSubmissions.map((submission) => (
-                <option key={submission.id} value={submission.id} className="bg-[#0a0a0f] text-white">
-                  {submission.id} - {submission.waste_type} - {submission.estimated_weight}{' '}
-                  {getUnitSuffix(submission.waste_type)}
-                  {submission.drop_point_name ? ` - ${submission.drop_point_name}` : ''}
-                </option>
-              ))}
-            </select>
-            <select
+            />
+            <SearchableSelect
               value={routeForm.driverId}
-              onChange={(event) =>
-                setRouteForm((current) => ({ ...current, driverId: event.target.value }))
+              placeholder="Pilih driver"
+              searchPlaceholder="Cari nama, email, atau kendaraan..."
+              emptyMessage="Driver tidak ditemukan."
+              options={driverOptions}
+              onChange={(nextDriverId) =>
+                setRouteForm((current) => ({ ...current, driverId: nextDriverId }))
               }
-              className="w-full rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-white focus:border-green-500 focus:outline-none"
-            >
-              <option value="" className="bg-[#0a0a0f] text-white">
-                Pilih driver
-              </option>
-              {drivers.map((driver) => (
-                <option key={driver.id} value={driver.id} className="bg-[#0a0a0f] text-white">
-                  {driver.full_name} {driver.vehicle_number ? `- ${driver.vehicle_number}` : ''}
-                </option>
-              ))}
-            </select>
-            <select
+            />
+            <SearchableSelect
               value={routeForm.dropPointId}
-              onChange={(event) =>
-                setRouteForm((current) => ({ ...current, dropPointId: event.target.value }))
+              placeholder="Pilih drop point tujuan"
+              searchPlaceholder="Cari nama atau alamat drop point..."
+              emptyMessage="Drop point tidak ditemukan."
+              options={dropPointOptions}
+              onChange={(nextDropPointId) =>
+                setRouteForm((current) => ({ ...current, dropPointId: nextDropPointId }))
               }
-              className="w-full rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-white focus:border-green-500 focus:outline-none"
-            >
-              <option value="" className="bg-[#0a0a0f] text-white">
-                Pilih drop point tujuan
-              </option>
-              {dropPoints.map((dropPoint) => (
-                <option key={dropPoint.id} value={dropPoint.id} className="bg-[#0a0a0f] text-white">
-                  {dropPoint.name} - {dropPoint.address}
-                </option>
-              ))}
-            </select>
+            />
             <input
               type="datetime-local"
               value={routeForm.scheduledAt}
