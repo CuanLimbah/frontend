@@ -72,7 +72,6 @@ export function UserManagement({ users }: UserManagementProps) {
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-green-500" />
                     <span className="text-green-500">Rp {user.total_earnings.toLocaleString('id-ID')}</span>
                   </div>
                 </td>
