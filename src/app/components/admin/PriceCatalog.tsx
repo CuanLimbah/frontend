@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit2, Save, X } from 'lucide-react';
+import { Droplets, Edit2, Info, Package, Save, X } from 'lucide-react';
 import type { WastePrice } from '../../types';
 import { toast } from 'sonner';
 import { getErrorMessage } from '../../lib/api';
@@ -48,90 +48,102 @@ export function PriceCatalog({ prices, onSavePrice }: PriceCatalogProps) {
 
   const getWasteTypeIcon = (type: WastePrice['waste_type']) => {
     const icons = {
-      food: '🍱',
-      oil: '🛢️',
+      food: Package,
+      oil: Droplets,
     };
     return icons[type];
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl text-white">Katalog Harga Limbah</h2>
-        <div className="text-gray-400 text-sm">Harga per unit (Rupiah)</div>
+    <div className="w-full">
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <h2 className="text-2xl font-semibold text-white">Katalog Harga Limbah</h2>
+        <div className="text-sm text-gray-400">Harga per unit (Rupiah)</div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 max-w-2xl">
-        {prices.map((price) => (
-          <div
-            key={price.id}
-            className="p-6 rounded-xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="text-4xl">{getWasteTypeIcon(price.waste_type)}</div>
-                <div>
-                  <h3 className="text-lg text-white">{getWasteTypeLabel(price.waste_type)}</h3>
-                  <p className="text-gray-400 text-sm">
-                    Update: {new Date(price.updated_at).toLocaleDateString('id-ID')}
-                  </p>
+      <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+        {prices.map((price) => {
+          const Icon = getWasteTypeIcon(price.waste_type);
+
+          return (
+            <div
+              key={price.id}
+              className="rounded-xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-5 shadow-lg shadow-black/10"
+            >
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-green-400">
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-lg font-semibold text-white">
+                      {getWasteTypeLabel(price.waste_type)}
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      Update: {new Date(price.updated_at).toLocaleDateString('id-ID')}
+                    </p>
+                  </div>
                 </div>
+
+                {editingId !== price.id && (
+                  <button
+                    onClick={() => handleEdit(price)}
+                    className="rounded-lg bg-white/5 p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-green-500"
+                    title={`Ubah harga ${getWasteTypeLabel(price.waste_type)}`}
+                  >
+                    <Edit2 className="h-5 w-5" />
+                  </button>
+                )}
               </div>
 
-              {editingId !== price.id && (
-                <button
-                  onClick={() => handleEdit(price)}
-                  className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-gray-400 hover:text-green-500"
-                >
-                  <Edit2 className="w-5 h-5" />
-                </button>
+              {editingId === price.id ? (
+                <div>
+                  <input
+                    type="number"
+                    value={editPrice}
+                    onChange={(e) => setEditPrice(Number(e.target.value))}
+                    className="mb-3 w-full rounded-lg border border-green-500 bg-white/5 px-4 py-3 text-white focus:outline-none"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => void handleSave(price.id)}
+                      disabled={savingId === price.id}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2 text-white transition-colors hover:bg-green-600"
+                    >
+                      <Save className="h-4 w-4" />
+                      <span>{savingId === price.id ? 'Menyimpan...' : 'Simpan'}</span>
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      disabled={savingId === price.id}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-500/30 bg-red-500/20 py-2 text-red-400 transition-colors hover:bg-red-500/30"
+                    >
+                      <X className="h-4 w-4" />
+                      <span>Batal</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-3xl font-semibold text-green-500">
+                  Rp {price.price_per_kg.toLocaleString('id-ID')}/
+                  {getPriceUnitSuffix(price.waste_type)}
+                </div>
               )}
             </div>
-
-            {editingId === price.id ? (
-              <div>
-                <input
-                  type="number"
-                  value={editPrice}
-                  onChange={(e) => setEditPrice(Number(e.target.value))}
-                  className="w-full px-4 py-3 bg-white/5 border border-green-500 rounded-lg text-white mb-3 focus:outline-none"
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => void handleSave(price.id)}
-                    disabled={savingId === price.id}
-                    className="flex-1 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>{savingId === price.id ? 'Menyimpan...' : 'Simpan'}</span>
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    disabled={savingId === price.id}
-                    className="flex-1 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/30 flex items-center justify-center gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    <span>Batal</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-3xl text-green-500">
-                Rp {price.price_per_kg.toLocaleString('id-ID')}/
-                {getPriceUnitSuffix(price.waste_type)}
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      <div className="mt-6 p-6 rounded-xl bg-blue-500/10 border border-blue-500/30">
-        <h3 className="text-white mb-2">ℹ️ Info Harga</h3>
-        <ul className="text-gray-400 text-sm space-y-1">
-          <li>• Harga yang diubah akan berlaku untuk semua setoran baru</li>
-          <li>• Setoran yang sudah diverifikasi tidak terpengaruh perubahan harga</li>
-          <li>• Semua perubahan harga akan tercatat dalam sistem</li>
+      <div className="mt-4 w-full rounded-xl border border-blue-500/30 bg-blue-500/10 p-5">
+        <h3 className="mb-3 flex items-center gap-2 text-lg font-semibold text-white">
+          <Info className="h-5 w-5 text-blue-400" />
+          Info Harga
+        </h3>
+        <ul className="space-y-2 text-sm text-gray-400">
+          <li>Harga yang diubah akan berlaku untuk semua setoran baru</li>
+          <li>Setoran yang sudah diverifikasi tidak terpengaruh perubahan harga</li>
+          <li>Semua perubahan harga akan tercatat dalam sistem</li>
         </ul>
       </div>
     </div>

@@ -139,9 +139,9 @@ export function DriverOperations({
   }));
 
   return (
-    <div className="grid xl:grid-cols-[420px_1fr] gap-6">
-      <div className="space-y-6">
-        <section className="p-6 rounded-xl bg-white/5 border border-white/10">
+    <div className="space-y-6">
+      <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-center gap-3 mb-5">
             <UserPlus className="w-5 h-5 text-green-400" />
             <h2 className="text-xl text-white">Akun Driver</h2>
@@ -207,12 +207,35 @@ export function DriverOperations({
           </div>
         </section>
 
-        <section className="p-6 rounded-xl bg-white/5 border border-white/10">
+        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
           <div className="flex items-center gap-3 mb-5">
-            <CalendarClock className="w-5 h-5 text-blue-400" />
+            <Truck className="w-5 h-5 text-green-400" />
+            <h2 className="text-xl text-white">Driver Aktif</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            {drivers.map((driver) => (
+              <div key={driver.id} className="p-4 rounded-lg bg-black/20 border border-white/10">
+                <div className="text-white">{driver.full_name}</div>
+                <div className="text-sm text-gray-400">{driver.email}</div>
+                <div className="text-sm text-gray-400">
+                  {driver.vehicle_number || 'Kendaraan belum diisi'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-xl border border-white/10 bg-white/5 p-6">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-center gap-3">
+            <CalendarClock className="h-5 w-5 text-blue-400" />
             <h2 className="text-xl text-white">Jadwalkan Rute</h2>
           </div>
+          <p className="text-sm text-gray-400">Pilih setoran, driver, drop point, lalu klik marker pada map.</p>
+        </div>
 
+        <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_1fr]">
           <div className="space-y-3">
             <select
               value={routeForm.submissionId}
@@ -232,7 +255,7 @@ export function DriverOperations({
                       : current.dropPointId,
                 }));
               }}
-              className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-white focus:border-green-500 focus:outline-none"
             >
               <option value="" className="bg-[#0a0a0f] text-white">
                 Pilih setoran pending
@@ -250,7 +273,7 @@ export function DriverOperations({
               onChange={(event) =>
                 setRouteForm((current) => ({ ...current, driverId: event.target.value }))
               }
-              className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-white focus:border-green-500 focus:outline-none"
             >
               <option value="" className="bg-[#0a0a0f] text-white">
                 Pilih driver
@@ -266,7 +289,7 @@ export function DriverOperations({
               onChange={(event) =>
                 setRouteForm((current) => ({ ...current, dropPointId: event.target.value }))
               }
-              className="w-full px-4 py-3 bg-[#0a0a0f] border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-white focus:border-green-500 focus:outline-none"
             >
               <option value="" className="bg-[#0a0a0f] text-white">
                 Pilih drop point tujuan
@@ -277,44 +300,25 @@ export function DriverOperations({
                 </option>
               ))}
             </select>
-            <div className="rounded-xl border border-white/10 bg-black/20 p-3">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm text-white">Map Drop Point</div>
-                  <div className="text-xs text-gray-400">
-                    Klik marker untuk memilih tujuan rute.
-                  </div>
-                </div>
-                <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-300">
-                  {selectedDropPoint ? 'Dipilih' : 'Belum dipilih'}
-                </span>
-              </div>
-              <EmbeddedMap
-                points={dropPointMapPoints}
-                emptyMessage="Belum ada drop point dengan koordinat."
-                className="h-[280px]"
-                onPointSelect={(pointId) =>
-                  setRouteForm((current) => ({ ...current, dropPointId: pointId }))
-                }
-              />
-              <div className="mt-3 rounded-lg bg-white/5 p-3 text-sm">
-                <div className="text-white">{selectedDropPoint?.name || 'Pilih drop point'}</div>
-                <div className="text-gray-400">{selectedDropPoint?.address || '-'}</div>
-                <div className="mt-1 text-xs text-gray-500">
-                  {selectedDropPoint
-                    ? `${selectedDropPoint.latitude.toFixed(6)}, ${selectedDropPoint.longitude.toFixed(6)}`
-                    : 'Koordinat belum dipilih'}
-                </div>
-              </div>
-            </div>
             <input
               type="datetime-local"
               value={routeForm.scheduledAt}
               onChange={(event) =>
                 setRouteForm((current) => ({ ...current, scheduledAt: event.target.value }))
               }
-              className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white focus:border-green-500 focus:outline-none"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white focus:border-green-500 focus:outline-none"
             />
+
+            <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-4">
+              <div className="text-sm text-white">{selectedDropPoint?.name || 'Drop point belum dipilih'}</div>
+              <div className="mt-1 text-sm text-gray-400">{selectedDropPoint?.address || 'Pilih drop point dari dropdown atau marker map.'}</div>
+              <div className="mt-2 text-xs text-gray-500">
+                {selectedDropPoint
+                  ? `${selectedDropPoint.latitude.toFixed(6)}, ${selectedDropPoint.longitude.toFixed(6)}`
+                  : 'Koordinat belum tersedia'}
+              </div>
+            </div>
+
             <button
               onClick={() => void handleAssignRoute()}
               disabled={
@@ -323,35 +327,40 @@ export function DriverOperations({
                 !routeForm.driverId ||
                 !routeForm.dropPointId
               }
-              className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-500 py-3 text-white transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-gray-600"
             >
-              <Route className="w-5 h-5" />
+              <Route className="h-5 w-5" />
               <span>{isAssigningRoute ? 'Menjadwalkan...' : 'Assign Rute'}</span>
             </button>
           </div>
-        </section>
-      </div>
 
-      <div className="space-y-6">
-        <section className="p-6 rounded-xl bg-white/5 border border-white/10">
-          <div className="flex items-center gap-3 mb-5">
-            <Truck className="w-5 h-5 text-green-400" />
-            <h2 className="text-xl text-white">Driver Aktif</h2>
-          </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            {drivers.map((driver) => (
-              <div key={driver.id} className="p-4 rounded-lg bg-black/20 border border-white/10">
-                <div className="text-white">{driver.full_name}</div>
-                <div className="text-sm text-gray-400">{driver.email}</div>
-                <div className="text-sm text-gray-400">
-                  {driver.vehicle_number || 'Kendaraan belum diisi'}
+          <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-sm text-white">Map Drop Point</div>
+                <div className="text-xs text-gray-400">
+                  Klik marker untuk memilih tujuan rute.
                 </div>
               </div>
-            ))}
+              <span className="rounded-full bg-blue-500/10 px-3 py-1 text-xs text-blue-300">
+                {selectedDropPoint ? 'Dipilih' : 'Belum dipilih'}
+              </span>
+            </div>
+            <EmbeddedMap
+              points={dropPointMapPoints}
+              emptyMessage="Belum ada drop point dengan koordinat."
+              className="h-[360px] min-h-[360px] xl:h-[440px]"
+              onPointSelect={(pointId) =>
+                setRouteForm((current) => ({ ...current, dropPointId: pointId }))
+              }
+            />
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section className="p-6 rounded-xl bg-white/5 border border-white/10">
+      <div className="grid gap-6 xl:grid-cols-2">
+
+        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-xl text-white mb-5">Rute Penjemputan</h2>
           <div className="space-y-3">
             {pickupRoutes.length === 0 ? (
@@ -380,7 +389,7 @@ export function DriverOperations({
           </div>
         </section>
 
-        <section className="p-6 rounded-xl bg-white/5 border border-white/10">
+        <section className="rounded-xl border border-white/10 bg-white/5 p-6">
           <h2 className="text-xl text-white mb-5">Payment Gateway</h2>
           <div className="space-y-3">
             {payments.length === 0 ? (

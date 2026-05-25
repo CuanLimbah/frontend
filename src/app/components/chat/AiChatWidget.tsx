@@ -1,8 +1,10 @@
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
+import ReactMarkdown from 'react-markdown';
 import { Bot, Loader2, MessageCircle, SendHorizontal, Sparkles, X } from 'lucide-react';
 import { api, getErrorMessage, type ChatAction } from '../../lib/api';
 import { useAuth } from '../../providers/AuthProvider';
+import type { UserRole } from '../../types';
 import './AiChatWidget.css';
 
 interface ChatMessage {
@@ -18,11 +20,35 @@ const welcomeMessage: ChatMessage = {
   text: 'Halo, saya asisten CuanLimbah. Saya bisa bantu jelaskan fitur, alur setor limbah, atau arahkan kamu ke halaman yang tepat.',
 };
 
-const suggestedPrompts = [
-  'Estimasi cuan 10 liter minyak jelantah grade B',
-  'Kenapa harga setoran saya berubah?',
-  'Apa bedanya grade A, B, dan C?',
-];
+const suggestedPromptsByRole: Record<UserRole | 'guest', string[]> = {
+  guest: [
+    'Apa itu CuanLimbah?',
+    'Jenis limbah apa saja yang bisa disetor?',
+    'Bagaimana cara mulai setor limbah?',
+  ],
+  user: [
+    'Estimasi cuan 10 liter minyak jelantah grade B',
+    'Kenapa harga setoran saya berubah?',
+    'Apa bedanya grade A, B, dan C?',
+  ],
+  driver: [
+    'Drop point mana saja yang tersedia?',
+    'Bagaimana cara melihat rute penjemputan saya?',
+    'Apa yang harus dilakukan setelah pickup selesai?',
+  ],
+  admin: [
+    'Bagaimana performa AI Quality Check hari ini?',
+    'Apakah Multimodal RAG membantu menurunkan override?',
+    'Berapa submission yang menunggu verifikasi?',
+  ],
+};
+
+const inputPlaceholderByRole: Record<UserRole | 'guest', string> = {
+  guest: 'Tanya tentang CuanLimbah...',
+  user: 'Tanya tentang setoran dan estimasi cuan...',
+  driver: 'Tanya tentang rute dan drop point...',
+  admin: 'Tanya tentang operasional dan analytics...',
+};
 
 function createMessage(sender: ChatMessage['sender'], text: string): ChatMessage {
   return {
@@ -40,6 +66,9 @@ export function AiChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
   const { accessToken, user } = useAuth();
+  const chatRole = user?.role ?? 'guest';
+  const suggestedPrompts = suggestedPromptsByRole[chatRole];
+  const inputPlaceholder = inputPlaceholderByRole[chatRole];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -133,7 +162,27 @@ export function AiChatWidget() {
                 key={message.id}
                 className={`ai-chat-message ai-chat-message-${message.sender}`}
               >
-                <p>{message.text}</p>
+                {message.sender === 'assistant' ? (
+                  <div className="ai-chat-markdown">
+                    <ReactMarkdown
+                      components={{
+                        h1: ({ node, ...props }) => <h3 {...props} />,
+                        h2: ({ node, ...props }) => <h3 {...props} />,
+                        h3: ({ node, ...props }) => <h3 {...props} />,
+                        p: ({ node, ...props }) => <p {...props} />,
+                        ul: ({ node, ...props }) => <ul {...props} />,
+                        ol: ({ node, ...props }) => <ol {...props} />,
+                        li: ({ node, ...props }) => <li {...props} />,
+                        strong: ({ node, ...props }) => <strong {...props} />,
+                        a: ({ node, ...props }) => <a {...props} />,
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <p>{message.text}</p>
+                )}
                 {message.action?.type === 'NAVIGATE' && (
                   <span className="ai-chat-action">
                     Membuka {message.action.payload}
@@ -167,7 +216,7 @@ export function AiChatWidget() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Tanya tentang setor limbah..."
+              placeholder={inputPlaceholder}
               disabled={isSending}
               aria-label="Ketik pesan ke asisten AI"
             />

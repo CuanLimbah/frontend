@@ -136,6 +136,46 @@
   white-space: pre-wrap;
 }
 
+.ai-chat-markdown {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-chat-markdown p {
+  margin: 0;
+  white-space: normal;
+}
+
+.ai-chat-markdown h3 {
+  margin: 2px 0 0;
+  color: #f8fafc;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.ai-chat-markdown ul,
+.ai-chat-markdown ol {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.ai-chat-markdown li {
+  margin: 4px 0;
+  padding-left: 2px;
+}
+
+.ai-chat-markdown strong {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.ai-chat-markdown a {
+  color: #86efac;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .ai-chat-message-user {
   align-self: flex-end;
   border-color: rgba(34, 197, 94, 0.32);

@@ -194,4 +194,27 @@
   select option:disabled {
     color: #9ca3af;
   }
+
+  .scrollbar-dark {
+    scrollbar-color: rgba(148, 163, 184, 0.28) rgba(15, 23, 42, 0.2);
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.2);
+    border-radius: 999px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+  }
+
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.42);
+  }
 }

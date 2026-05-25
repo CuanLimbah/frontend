@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { CheckCircle, XCircle, Package, Image as ImageIcon } from 'lucide-react';
+import {
+  Bot,
+  CheckCircle,
+  Copy,
+  FileText,
+  Image as ImageIcon,
+  Package,
+  X,
+  XCircle,
+} from 'lucide-react';
 import type {
   QualityCheckResult,
   QualityFeedbackSeverity,
@@ -100,6 +109,21 @@ function formatRupiah(value: number) {
   return `Rp ${value.toLocaleString('id-ID')}`;
 }
 
+function PanelHeader({
+  icon: Icon,
+  title,
+}: {
+  icon: typeof FileText;
+  title: string;
+}) {
+  return (
+    <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+      <Icon className="h-4 w-4 text-blue-400" />
+      <div className="text-sm font-medium text-white">{title}</div>
+    </div>
+  );
+}
+
 export function VerificationQueue({
   accessToken,
   submissions,
@@ -130,6 +154,8 @@ export function VerificationQueue({
   const [qualityErrors, setQualityErrors] = useState<Record<string, string>>({});
   const [qualityCheckingId, setQualityCheckingId] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [rejectingSubmissionId, setRejectingSubmissionId] = useState<string | null>(null);
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
 
   const handleApprove = async (submissionId: string) => {
     const submission = submissions.find((item) => item.id === submissionId);
@@ -233,12 +259,18 @@ export function VerificationQueue({
   };
 
   const handleReject = async (submissionId: string) => {
-    const reason = prompt('Alasan penolakan:');
-    if (!reason) return;
+    const reason = rejectReasons[submissionId]?.trim();
+
+    if (!reason) {
+      toast.error('Alasan penolakan wajib diisi.');
+      return;
+    }
 
     try {
       setProcessingId(submissionId);
       await onReject(submissionId, reason);
+      setRejectingSubmissionId(null);
+      setRejectReasons((prev) => ({ ...prev, [submissionId]: '' }));
       toast.success('Setoran ditolak.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'Gagal menolak setoran.'));
@@ -380,6 +412,8 @@ export function VerificationQueue({
     return value ? 'Ya' : 'Tidak';
   };
 
+  const rejectingSubmission = submissions.find((item) => item.id === rejectingSubmissionId);
+
   return (
     <div className="max-w-6xl mx-auto">
       <h2 className="text-2xl text-white mb-6">Antrian Verifikasi</h2>
@@ -392,19 +426,38 @@ export function VerificationQueue({
       ) : (
         <div className="space-y-4">
           {submissions.map((submission) => (
-            <div key={submission.id} className="p-6 rounded-xl bg-white/5 border border-white/10">
-              <div className="grid md:grid-cols-3 gap-6">
+            <div
+              key={submission.id}
+              className="rounded-xl border border-white/10 bg-white/5 p-4 sm:p-5"
+            >
+              <div className="grid items-start gap-4 xl:grid-cols-[350px_320px_minmax(0,1fr)]">
+                <div className="space-y-4">
+                  <div className="space-y-4">
                 {/* Submission Info */}
-                <div className="md:col-span-1">
-                  <div className="mb-4">
+                <div className="overflow-hidden rounded-lg border border-white/10 bg-black/10">
+                  <PanelHeader icon={FileText} title="Informasi Setoran" />
+                  <div className="space-y-4 p-4">
+                  <div>
                     <div className="text-sm text-gray-400 mb-1">ID Setoran</div>
-                    <div className="text-white font-mono">#{submission.id}</div>
+                    <div className="flex items-start gap-2 text-white">
+                      <span className="min-w-0 break-all font-mono text-sm">
+                        #{submission.id}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => void navigator.clipboard?.writeText(submission.id)}
+                        className="shrink-0 text-gray-400 transition-colors hover:text-white"
+                        title="Salin ID setoran"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="mb-4">
+                  <div className="border-t border-white/10 pt-4">
                     <div className="text-sm text-gray-400 mb-1">Jenis Limbah</div>
                     <div className="text-white">{getWasteTypeLabel(submission.waste_type)}</div>
                   </div>
-                  <div className="mb-4">
+                  <div className="border-t border-white/10 pt-4">
                     <div className="text-sm text-gray-400 mb-1">
                       {getEstimatedQuantityLabel(submission.waste_type)}
                     </div>
@@ -412,17 +465,20 @@ export function VerificationQueue({
                       {submission.estimated_weight} {getUnitSuffix(submission.waste_type)}
                     </div>
                   </div>
-                  <div>
+                  <div className="border-t border-white/10 pt-4">
                     <div className="text-sm text-gray-400 mb-1">Waktu Submit</div>
                     <div className="text-white">
                       {format(new Date(submission.created_at), 'dd MMM yyyy, HH:mm', { locale: id })}
                     </div>
                   </div>
+                  </div>
                 </div>
 
                 {/* Image Preview */}
-                <div className="md:col-span-1">
-                  <div className="aspect-square rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                <div className="overflow-hidden rounded-lg border border-white/10 bg-black/10">
+                  <PanelHeader icon={ImageIcon} title="Foto Limbah" />
+                  <div className="p-3">
+                  <div className="flex aspect-[4/3] max-h-[300px] items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/5">
                     {submission.image_url ? (
                       <img
                         src={submission.image_url}
@@ -436,11 +492,15 @@ export function VerificationQueue({
                       </div>
                     )}
                   </div>
+                  </div>
                 </div>
 
-                {/* Verification Actions */}
-                <div className="md:col-span-1">
-                  <div className="mb-4 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+                  </div>
+                </div>
+
+                <div className="min-w-0 overflow-hidden rounded-lg border border-white/10 bg-black/10">
+                  <PanelHeader icon={Bot} title="AI Quality Check" />
+                  <div className="p-4">
                     <div className="text-white mb-3">AI Quality Check</div>
                     <label className="block text-sm text-gray-300 mb-2">
                       Deskripsi kondisi limbah
@@ -455,7 +515,7 @@ export function VerificationQueue({
                       }
                       placeholder="Contoh: Minyak agak keruh, ada sedikit endapan, tidak terlihat bercampur air."
                       rows={3}
-                      className="w-full resize-none px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-blue-400 focus:outline-none"
+                      className="w-full resize-none overflow-hidden px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white placeholder-gray-500 focus:border-blue-400 focus:outline-none"
                     />
                     <p className="mt-2 text-xs text-gray-400 leading-relaxed">
                       AI akan membaca foto limbah jika tersedia, lalu
@@ -480,100 +540,100 @@ export function VerificationQueue({
                     )}
 
                     {getQualityResult(submission) && (
-                      <div className="mt-4 space-y-3 rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+                      <div className="scrollbar-dark mt-4 max-h-[520px] space-y-3 overflow-y-auto rounded-lg border border-white/10 bg-white/5 p-3 pr-2 text-sm">
                         {getQualityResult(submission)!.visualObservation && (
                           <div className="space-y-3 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
                             <div className="text-white">Observasi Foto AI</div>
-                            <div className="grid gap-2">
-                              <div className="flex items-center justify-between gap-3">
+                            <div className="divide-y divide-white/10 rounded-lg border border-white/10 bg-black/10">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Kualitas Foto</span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getImageQualityLabel(
                                     getQualityResult(submission)!.visualObservation!
                                       .imageQuality,
                                   )}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Limbah Terlihat</span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getBooleanLabel(
                                     getQualityResult(submission)!.visualObservation!
                                       .isWasteVisible,
                                   )}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Jenis Terdeteksi</span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getDetectedWasteTypeLabel(
                                     getQualityResult(submission)!.visualObservation!
                                       .detectedWasteType,
                                   )}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Warna</span>
-                                <span className="text-white text-right">
+                                <span className="text-right text-white">
                                   {getQualityResult(submission)!.visualObservation!
                                     .color || '-'}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Kejernihan</span>
-                                <span className="text-white text-right">
+                                <span className="text-right text-white">
                                   {getQualityResult(submission)!.visualObservation!
                                     .clarity || '-'}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Endapan</span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getQualityResult(submission)!.visualObservation!
                                     .sedimentLevel || '-'}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Air Terlihat</span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getBooleanLabel(
                                     getQualityResult(submission)!.visualObservation!
                                       .waterVisible,
                                   )}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">
                                   Sisa Makanan Terlihat
                                 </span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getBooleanLabel(
                                     getQualityResult(submission)!.visualObservation!
                                       .foodResidueVisible,
                                   )}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">
                                   Kontaminasi Non-Organik
                                 </span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {getBooleanLabel(
                                     getQualityResult(submission)!.visualObservation!
                                       .nonOrganicContaminationVisible,
                                   )}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Kondisi Wadah</span>
-                                <span className="text-white text-right">
+                                <span className="text-right text-white">
                                   {getQualityResult(submission)!.visualObservation!
                                     .containerCondition || '-'}
                                 </span>
                               </div>
-                              <div className="flex items-center justify-between gap-3">
+                              <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)] gap-3 px-3 py-2">
                                 <span className="text-gray-400">Confidence Vision</span>
-                                <span className="text-white">
+                                <span className="text-right text-white">
                                   {Math.round(
                                     getQualityResult(submission)!
                                       .visualObservation!.visionConfidence * 100,
@@ -699,7 +759,11 @@ export function VerificationQueue({
                     )}
                   </div>
 
-                  <div className="mb-4 rounded-lg border border-white/10 bg-white/5 p-3">
+                </div>
+
+                {/* Verification Actions */}
+                <div className="min-w-0 space-y-4">
+                  <div className="rounded-lg border border-white/10 bg-white/5 p-3">
                     {hasPricingMetadata(submission) ? (
                       <div className="space-y-2">
                         {submission.quality_grade && (
@@ -744,7 +808,7 @@ export function VerificationQueue({
                     )}
                   </div>
 
-                  <div className="mb-6">
+                  <div>
                     <label className="block text-white mb-2">
                       {getActualQuantityLabel(submission.waste_type)} (
                       {getUnitSuffix(submission.waste_type)})
@@ -760,7 +824,7 @@ export function VerificationQueue({
                     />
                   </div>
 
-                  <div className="mb-6">
+                  <div>
                     <label className="block text-white mb-2">Grade Kualitas</label>
                     <select
                       value={qualityGrades[submission.id] || 'A'}
@@ -787,7 +851,7 @@ export function VerificationQueue({
                   </div>
 
                   {isOverridingAiGrade(submission) && (
-                    <div className="mb-6 rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3">
+                    <div className="scrollbar-dark max-h-[300px] overflow-y-auto rounded-lg border border-yellow-500/20 bg-yellow-500/10 p-3 pr-2">
                       <div className="text-white mb-2">Feedback Override AI</div>
                       <p className="mb-3 text-xs text-yellow-100 leading-relaxed">
                         Alasan override membantu sistem mengevaluasi performa AI.
@@ -884,7 +948,7 @@ export function VerificationQueue({
                     </div>
                   )}
 
-                  <div className="mb-6">
+                  <div>
                     <label className="block text-white mb-2">Catatan Kualitas Admin</label>
                     <textarea
                       value={adminQualityNotes[submission.id] || ''}
@@ -904,7 +968,7 @@ export function VerificationQueue({
                   </div>
 
                   {getEstimatedPreview(submission) != null && (
-                    <div className="mb-6 rounded-lg border border-green-500/20 bg-green-500/10 p-3">
+                    <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-3">
                       <div className="text-sm text-green-300 mb-1">Estimasi Cuan</div>
                       <p className="text-sm text-gray-200 leading-relaxed">
                         Estimasi sementara: {formatRupiah(getEstimatedPreview(submission)!)}.
@@ -926,7 +990,7 @@ export function VerificationQueue({
                     </button>
 
                     <button
-                      onClick={() => void handleReject(submission.id)}
+                      onClick={() => setRejectingSubmissionId(submission.id)}
                       disabled={processingId === submission.id}
                       className="w-full py-3 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all border border-red-500/30 flex items-center justify-center gap-2"
                     >
@@ -938,6 +1002,98 @@ export function VerificationQueue({
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {rejectingSubmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">
+          <div className="w-full max-w-lg overflow-hidden rounded-xl border border-red-500/30 bg-[#11131b] shadow-2xl shadow-black/50">
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 px-5 py-4">
+              <div>
+                <div className="flex items-center gap-2 text-lg font-semibold text-white">
+                  <XCircle className="h-5 w-5 text-red-400" />
+                  Tolak Setoran
+                </div>
+                <p className="mt-1 text-sm text-gray-400">
+                  Berikan alasan agar user memahami kenapa setoran belum bisa diterima.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRejectingSubmissionId(null)}
+                disabled={processingId === rejectingSubmission.id}
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                title="Tutup"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-4">
+              <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-gray-400">ID Setoran</span>
+                  <span className="max-w-[240px] truncate font-mono text-white">
+                    #{rejectingSubmission.id}
+                  </span>
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3">
+                  <span className="text-gray-400">Jenis Limbah</span>
+                  <span className="text-white">
+                    {getWasteTypeLabel(rejectingSubmission.waste_type)}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-white">
+                  Alasan Penolakan
+                </label>
+                <textarea
+                  value={rejectReasons[rejectingSubmission.id] || ''}
+                  onChange={(event) =>
+                    setRejectReasons((prev) => ({
+                      ...prev,
+                      [rejectingSubmission.id]: event.target.value,
+                    }))
+                  }
+                  rows={4}
+                  maxLength={500}
+                  placeholder="Contoh: Foto tidak jelas, jumlah limbah tidak sesuai, atau jenis limbah tidak memenuhi ketentuan."
+                  className="scrollbar-dark w-full resize-none rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 focus:border-red-400 focus:outline-none"
+                />
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-gray-400">
+                  <span>Alasan ini akan dikirim sebagai catatan penolakan.</span>
+                  <span>{(rejectReasons[rejectingSubmission.id] || '').length}/500</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-white/10 px-5 py-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setRejectingSubmissionId(null)}
+                disabled={processingId === rejectingSubmission.id}
+                className="rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-white transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleReject(rejectingSubmission.id)}
+                disabled={
+                  processingId === rejectingSubmission.id ||
+                  !rejectReasons[rejectingSubmission.id]?.trim()
+                }
+                className="flex items-center justify-center gap-2 rounded-lg border border-red-500/40 bg-red-500/20 px-4 py-2.5 text-red-100 transition-colors hover:bg-red-500/30 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <XCircle className="h-4 w-4" />
+                <span>
+                  {processingId === rejectingSubmission.id ? 'Menolak...' : 'Tolak Setoran'}
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
