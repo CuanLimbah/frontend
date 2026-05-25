@@ -29,6 +29,9 @@ type DropPointDistance = DropPoint & {
   distanceKm?: number;
 };
 
+const MAX_IMAGE_SIZE_MB = 10;
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * 1024 * 1024;
+
 function hasValidCoordinates(point: DropPoint) {
   return Number.isFinite(point.latitude) && Number.isFinite(point.longitude);
 }
@@ -121,6 +124,14 @@ export function WasteSubmissionForm({
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        toast.error(`Ukuran foto maksimal ${MAX_IMAGE_SIZE_MB} MB.`);
+        e.target.value = '';
+        setImage(null);
+        setImagePreview('');
+        return;
+      }
+
       setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -489,7 +500,9 @@ export function WasteSubmissionForm({
                       <div className="text-center">
                         <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                         <p className="text-white mb-2">Klik untuk upload foto</p>
-                        <p className="text-gray-500 text-sm">PNG, JPG hingga 10MB</p>
+                        <p className="text-gray-500 text-sm">
+                          PNG, JPG hingga {MAX_IMAGE_SIZE_MB} MB
+                        </p>
                       </div>
                     )}
                   </div>
