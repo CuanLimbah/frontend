@@ -421,17 +421,17 @@ export function DriverOperations({
         <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_1fr]">
           <div className="space-y-3">
             <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-xs text-gray-400">
-              Menampilkan {assignableSubmissions.length} setoran siap assign dari{' '}
-              {pendingSubmissions.length} pending.
+              Menampilkan {assignableSubmissions.length} setoran terverifikasi siap assign dari{' '}
+              {pendingSubmissions.length} setoran terverifikasi.
               {hiddenAssignedSubmissionCount > 0
                 ? ` ${hiddenAssignedSubmissionCount} disembunyikan karena sudah punya rute.`
                 : ''}
             </div>
             <SearchableSelect
               value={routeForm.submissionId}
-              placeholder="Pilih setoran pending"
+              placeholder="Pilih setoran terverifikasi"
               searchPlaceholder="Cari ID, jenis limbah, atau drop point..."
-              emptyMessage="Tidak ada setoran pending yang belum di-assign."
+              emptyMessage="Tidak ada setoran terverifikasi yang belum di-assign."
               options={submissionOptions}
               onChange={(nextSubmissionId) => {
                 const nextSubmission = assignableSubmissions.find(

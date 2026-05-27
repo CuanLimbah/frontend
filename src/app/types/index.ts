@@ -452,6 +452,7 @@ export interface AdminDashboardData {
   prices: WastePrice[];
   drop_points: DropPoint[];
   pending_submissions: WasteSubmission[];
+  assignable_submissions: WasteSubmission[];
   users: AdminUser[];
   drivers: User[];
   pickup_routes: PickupRoute[];
