@@ -188,6 +188,14 @@ export function DriverOperations({
   const selectedSubmission = pendingSubmissions.find(
     (submission) => submission.id === routeForm.submissionId,
   );
+  const assignedSubmissionIds = new Set(
+    pickupRoutes
+      .filter((route) => route.status !== 'cancelled')
+      .map((route) => route.submission_id),
+  );
+  const assignableSubmissions = pendingSubmissions.filter(
+    (submission) => !assignedSubmissionIds.has(submission.id),
+  );
 
   useEffect(() => {
     const preferredDropPointId = selectedSubmission?.drop_point_id;
@@ -200,6 +208,25 @@ export function DriverOperations({
       setRouteForm((current) => ({ ...current, dropPointId: preferredDropPointId }));
     }
   }, [dropPoints, routeForm.dropPointId, selectedSubmission?.drop_point_id]);
+
+  useEffect(() => {
+    if (
+      routeForm.submissionId &&
+      !assignableSubmissions.some((submission) => submission.id === routeForm.submissionId)
+    ) {
+      setRouteForm((current) => ({
+        ...current,
+        submissionId: assignableSubmissions[0]?.id ?? '',
+      }));
+    }
+
+    if (!routeForm.submissionId && assignableSubmissions[0]?.id) {
+      setRouteForm((current) => ({
+        ...current,
+        submissionId: assignableSubmissions[0].id,
+      }));
+    }
+  }, [assignableSubmissions, routeForm.submissionId]);
 
   const handleCreateDriver = async () => {
     try {
@@ -267,7 +294,8 @@ export function DriverOperations({
     );
   };
   const selectedDropPoint = dropPoints.find((dropPoint) => dropPoint.id === routeForm.dropPointId);
-  const submissionOptions: SelectOption[] = pendingSubmissions.map((submission) => ({
+  const hiddenAssignedSubmissionCount = pendingSubmissions.length - assignableSubmissions.length;
+  const submissionOptions: SelectOption[] = assignableSubmissions.map((submission) => ({
     value: submission.id,
     label: `${submission.id} - ${submission.waste_type} - ${submission.estimated_weight} ${getUnitSuffix(
       submission.waste_type,
@@ -392,14 +420,21 @@ export function DriverOperations({
 
         <div className="grid gap-5 xl:grid-cols-[minmax(320px,400px)_1fr]">
           <div className="space-y-3">
+            <div className="rounded-lg border border-white/10 bg-black/20 px-4 py-3 text-xs text-gray-400">
+              Menampilkan {assignableSubmissions.length} setoran siap assign dari{' '}
+              {pendingSubmissions.length} pending.
+              {hiddenAssignedSubmissionCount > 0
+                ? ` ${hiddenAssignedSubmissionCount} disembunyikan karena sudah punya rute.`
+                : ''}
+            </div>
             <SearchableSelect
               value={routeForm.submissionId}
               placeholder="Pilih setoran pending"
               searchPlaceholder="Cari ID, jenis limbah, atau drop point..."
-              emptyMessage="Setoran pending tidak ditemukan."
+              emptyMessage="Tidak ada setoran pending yang belum di-assign."
               options={submissionOptions}
               onChange={(nextSubmissionId) => {
-                const nextSubmission = pendingSubmissions.find(
+                const nextSubmission = assignableSubmissions.find(
                   (submission) => submission.id === nextSubmissionId,
                 );
                 const preferredDropPointId = nextSubmission?.drop_point_id;
