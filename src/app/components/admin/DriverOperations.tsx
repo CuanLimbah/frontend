@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CalendarClock, Check, ChevronDown, Plus, Route, Search, Truck, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import type { DropPoint, PaymentRecord, PickupRoute, User, WasteSubmission } from '../../types';
@@ -44,6 +44,7 @@ function SearchableSelect({
   options,
   onChange,
 }: SearchableSelectProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const selectedOption = options.find((option) => option.value === value);
@@ -60,10 +61,39 @@ function SearchableSelect({
     setIsOpen(false);
   };
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+        setQuery('');
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        setQuery('');
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="relative" onBlur={() => window.setTimeout(() => setIsOpen(false), 120)}>
+    <div ref={containerRef} className={`relative ${isOpen ? 'z-[1200]' : 'z-10'}`}>
       <button
         type="button"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen((current) => !current)}
         className="flex w-full items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#0a0a0f] px-4 py-3 text-left text-white transition-colors hover:border-green-500/60 focus:border-green-500 focus:outline-none"
       >
@@ -78,7 +108,7 @@ function SearchableSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[80] overflow-hidden rounded-xl border border-green-500/30 bg-[#05070a] shadow-2xl shadow-black/60">
+        <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-[1200] overflow-hidden rounded-xl border border-green-500/30 bg-[#05070a] shadow-2xl shadow-black/60">
           <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
             <Search className="h-4 w-4 text-gray-500" />
             <input
